@@ -9,12 +9,10 @@ import (
 
 func TestRead(t *testing.T) {
 	t.Run("успешное чтение фрейма протокола из потока байтов", func(t *testing.T) {
-		packer := Packer{}
-
-		noiseBytes := []byte{0, 0, 0, syncFramePart[0], syncFramePart[1], 0, 0}
-
-		packedData, err := packer.Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
+		packedData, err := NewPacker().Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
 		assert.NoError(t, err)
+
+		noiseBytes := []byte{0x01, 0x00, 0xFF, syncFramePart[0], syncFramePart[1], 0x05, 0x06}
 
 		rawData := make([]byte, 0, len(packedData)+len(noiseBytes))
 		rawData = append(rawData, noiseBytes...)
@@ -32,6 +30,25 @@ func TestRead(t *testing.T) {
 		assert.Nil(t, b)
 		assert.Error(t, err)
 	})
+}
+
+func BenchmarkRead(b *testing.B) {
+	packedData, _ := NewPacker().Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
+
+	noiseBytes := []byte{0x01, 0x00, 0xFF, syncFramePart[0], syncFramePart[1], 0x05, 0x06}
+
+	rawData := make([]byte, 0, len(packedData)+len(noiseBytes))
+	rawData = append(rawData, noiseBytes...)
+	rawData = append(rawData, packedData...)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := Read(bytes.NewReader(rawData), 1<<10)
+		if err != nil {
+			b.Fatalf("Read return error: %v", err)
+		}
+	}
 }
 
 // func TestSPIReader(t *testing.T) {

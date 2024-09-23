@@ -52,8 +52,8 @@ var syncFramePart = []byte{0x57, 0x10, 0xFF}
 
 type Packer struct{}
 
-func NewPacker() Packer {
-	return Packer{}
+func NewPacker() *Packer {
+	return &Packer{}
 }
 
 // Pack ...
@@ -153,6 +153,7 @@ func (p *Packer) Unpack(data []byte) (out any, err error) {
 }
 
 var (
+	headerBuff     = make([]byte, 3)
 	tmpBuff        = make([]byte, 1)
 	idBuff         = make([]byte, 1)
 	tsBuff         = make([]byte, 4)
@@ -160,45 +161,74 @@ var (
 	checkSumBuff   = make([]byte, 2)
 )
 
+var buffPool = make(map[int][]byte)
+
+// buffFromPool возвращает из пула слайс размера size, что позволяет оптимизирует
+// аллокацию памяти при каждом вызове метода Read. Длина сообщений протокола  постоянна,
+// поэтому нет необходимости следить за размером пула.
+func buffFromPool(size int) []byte {
+	buff, ok := buffPool[size]
+	if !ok {
+		buffPool[size] = make([]byte, size)
+		buff = buffPool[size]
+	}
+
+	return buff
+}
+
 // Read ищет в потоке принимаемых байтов синхронизовачный заголовок
 // и затем вычитает фрейм протокола. Возвращает полученный фрейм и ошибку.
 func Read(r io.Reader, limit int) ([]byte, error) {
-	var rawData []byte
+	rawData := []byte{}
 
-	headerBuff := make([]byte, 3)
-	_, _ = r.Read(headerBuff)
+	_, err := r.Read(headerBuff)
+	if err != nil {
+		return nil, fmt.Errorf("proto.Read failed: %w", err)
+	}
 
-	for idx := 0; idx < limit && rawData == nil; idx++ {
+	for ; len(rawData) == 0 && limit > 0; limit-- {
 		if !isEqual(syncFramePart, headerBuff) {
 			headerBuff[0] = headerBuff[1]
 			headerBuff[1] = headerBuff[2]
-			_, _ = r.Read(tmpBuff)
+
+			_, err = r.Read(tmpBuff)
+			if err != nil {
+				return nil, fmt.Errorf("proto.Read failed: %w", err)
+			}
+
 			headerBuff[2] = tmpBuff[0]
 
 			continue
 		}
 
-		_, _ = r.Read(idBuff)
-		_, _ = r.Read(tsBuff)
-		_, _ = r.Read(paylodSizeBuff)
+		err := readFrameParts(r, idBuff, tsBuff, paylodSizeBuff)
+		if err != nil {
+			return nil, fmt.Errorf("proto.Read failed: %w", err)
+		}
 
 		payloadSize := int(paylodSizeBuff[0])
-		// TODO: получать из пула
-		payloadBuff := make([]byte, payloadSize)
 
-		_, _ = r.Read(payloadBuff)
-		_, _ = r.Read(checkSumBuff)
+		payloadBuff := buffFromPool(payloadSize)
 
-		rawData = make([]byte, 0, payloadSize+serviceFramePartSize)
-		rawData = append(rawData, syncFramePart...)
-		rawData = append(rawData, idBuff...)
-		rawData = append(rawData, tsBuff...)
-		rawData = append(rawData, byte(payloadSize))
-		rawData = append(rawData, payloadBuff...)
-		rawData = append(rawData, checkSumBuff...)
+		err = readFrameParts(r, payloadBuff, checkSumBuff)
+		if err != nil {
+			return nil, fmt.Errorf("proto.Read failed: %w", err)
+		}
+
+		rawData = buffFromPool(payloadSize + serviceFramePartSize)
+
+		mergeSlices(
+			rawData,
+			syncFramePart,
+			idBuff,
+			tsBuff,
+			paylodSizeBuff,
+			payloadBuff,
+			checkSumBuff,
+		)
 	}
 
-	if rawData == nil {
+	if len(rawData) == 0 {
 		return nil, fmt.Errorf("frame not found after %d bytes reading", limit)
 	}
 
@@ -217,4 +247,26 @@ func isEqual(a, b []byte) bool {
 	}
 
 	return true
+}
+
+func readFrameParts(r io.Reader, parts ...[]byte) error {
+	for _, part := range parts {
+		_, err := r.Read(part)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func mergeSlices(dst []byte, slices ...[]byte) {
+	idx := 0
+
+	for _, sl := range slices {
+		for _, b := range sl {
+			dst[idx] = b
+			idx++
+		}
+	}
 }

@@ -33,6 +33,12 @@ test:
 	$(GO_BIN) test -parallel=10 -cover $$(go list ./... | grep /internal/pkg/proto)
 	@echo "test passed"
 
+# Запуск бенчмарков
+.PHONY: bench
+bench:
+	$(GO_BIN) test -bench=. -benchmem $$(go list ./... | grep /internal/pkg/proto)
+	@echo "bench executed"
+
 # Линтер проверяет полностью весь код сервиса
 .PHONY: full-lint
 full-lint:
