@@ -1,3 +1,4 @@
+// Package depthmeter предоставляет подкоманду depthmeter
 package depthmeter
 
 import (
@@ -17,7 +18,7 @@ var (
 	// frameHeader последовательность байт протокола для синхронизации
 	frameHeader = []byte{0x57, 0x00, 0xff}
 	// rawData преаллоцированный массив байт для чтения данных протокола
-	rawData []byte = make([]byte, 2*totalFrameSize)
+	rawData = make([]byte, 2*totalFrameSize)
 )
 
 type DepthMeter struct {

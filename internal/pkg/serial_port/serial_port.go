@@ -1,3 +1,4 @@
+// Package serial_port предоставляет структур для работы с последовательным портом
 package serial_port
 
 import (
@@ -38,9 +39,9 @@ func New(cfg *SerialPortConfig) (*SerialPort, error) {
 	}, nil
 }
 
-func (r *SerialPort) Read(p []byte) (n int, err error) {
+func (sp *SerialPort) Read(p []byte) (n int, err error) {
 	for n < len(p) {
-		c, err := r.Port.Read(p[n:])
+		c, err := sp.Port.Read(p[n:])
 		if err != nil {
 			return n, err
 		}
@@ -51,12 +52,12 @@ func (r *SerialPort) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (spw *SerialPort) Close() error {
-	if spw.Port == nil {
+func (sp *SerialPort) Close() error {
+	if sp.Port == nil {
 		return nil
 	}
 
-	err := spw.Port.Close()
+	err := sp.Port.Close()
 	if err != nil {
 		return err
 	}

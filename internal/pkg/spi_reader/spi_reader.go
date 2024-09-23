@@ -1,3 +1,4 @@
+// Package spireader ...
 package spireader
 
 import (
@@ -56,4 +57,3 @@ func (r *BytesReaderAdapter) Read(n int) []byte {
 
 // 	return rawData, nil
 // }
-

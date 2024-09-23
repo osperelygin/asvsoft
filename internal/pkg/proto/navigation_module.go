@@ -46,8 +46,10 @@ type NavigationModuleData struct {
 }
 
 func (p *Packer) packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
-	var buf *bytes.Buffer
-	var err error
+	var (
+		buf *bytes.Buffer
+		err error
+	)
 
 	switch msgID {
 	case WritingModeA:
@@ -79,9 +81,8 @@ func (p *Packer) packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (p *Packer) unpackIMUData(in []byte, msgID MessageID) (*IMUData, error) {
-	var err error
-	out := new(IMUData)
+func (p *Packer) unpackIMUData(in []byte, msgID MessageID) (out *IMUData, err error) {
+	out = new(IMUData)
 
 	switch msgID {
 	case WritingModeA:
@@ -114,8 +115,10 @@ func (p *Packer) unpackIMUData(in []byte, msgID MessageID) (*IMUData, error) {
 }
 
 func (p *Packer) packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
-	var buf *bytes.Buffer
-	var err error
+	var (
+		buf *bytes.Buffer
+		err error
+	)
 
 	switch msgID {
 	case WritingModeA:
@@ -155,9 +158,8 @@ func (p *Packer) packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (p *Packer) unpackGNSSData(in []byte, msgID MessageID) (*GNSSData, error) {
-	var err error
-	out := new(GNSSData)
+func (p *Packer) unpackGNSSData(in []byte, msgID MessageID) (out *GNSSData, err error) {
+	out = new(GNSSData)
 
 	switch msgID {
 	case WritingModeA:

@@ -1,3 +1,4 @@
+// Package common предоставляет методы для добавления коммандам общих cli флагов
 package common
 
 import (

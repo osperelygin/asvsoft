@@ -15,8 +15,8 @@ LAST_COMMIT_HASH = $(shell git rev-parse HEAD | cut -c -8)
 LD_FLAGS := "-X 'main.BuildTime=$(BUILD_DATE)' -X 'main.BuildCommit=$(LAST_COMMIT_HASH)' -X 'main.BuildBranch=$(BRANCH)'"
 # Путь до бинарника golang-ci
 GOLANGCI_BIN := $(shell which golangci-lint)
-# Путь до бинарника go/tinygo
-GO_BIN := go
+# Путь до бинарника go
+GO_BIN ?= go
 
 # Дефолтное поведение
 default: build
@@ -24,13 +24,19 @@ default: build
 # Линтер проверяет отличия от мастера
 .PHONY: lint
 lint:
-	$(GOLANGCI_BIN) run --config=.golangci.yml --new-from-rev=origin/master ./...
+	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOLANGCI_BIN) run --config=.golangci.yml --new-from-rev=origin/master ./...
 	@echo "lint successfully"
+
+# Запуск тестов и подсчет процента покрытия тестами
+.PHONY: test
+test:
+	$(GO_BIN) test -parallel=10 -cover $$(go list ./... | grep /internal/pkg/proto)
+	@echo "test passed"
 
 # Линтер проверяет полностью весь код сервиса
 .PHONY: full-lint
 full-lint:
-	$(GOLANGCI_BIN) run --config=.golangci.yml ./...
+	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOLANGCI_BIN) run --config=.golangci.yml ./...
 	@echo "lint successfully"
 
 # Сборка сервиса

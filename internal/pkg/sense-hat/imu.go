@@ -132,7 +132,7 @@ func (imu *IMU) RawMeasure() ([]byte, error) {
 func (imu *IMU) readMagMeasure() ([]byte, int, error) {
 	tries := 20
 
-	for ; tries > 0; tries -= 1 {
+	for ; tries > 0; tries-- {
 		// TODO: читает нули, разобраться почему
 		b, err := imu.magnBus.ReadRegU8(AK09918_ST1)
 		if err != nil {
@@ -183,6 +183,10 @@ func initInertialSensors(config *ImuConfig) (*i2c.I2C, error) {
 	}
 
 	b, _, err := bus.ReadRegBytes(0x00, 1)
+	if err != nil {
+		return nil, fmt.Errorf("read from register failed: %v", err)
+	}
+
 	if b[0] != 0x05 {
 		return nil, fmt.Errorf("unexpected byte was read: %d", b[0])
 	}
@@ -230,6 +234,10 @@ func initMagnSensor(config *ImuConfig) (*i2c.I2C, error) {
 	}
 
 	b, err := bus.ReadRegU8(AK09918_WIA2)
+	if err != nil {
+		return nil, fmt.Errorf("read from register failed: %v", err)
+	}
+
 	if b != 0x0C {
 		return nil, fmt.Errorf("unexpected byte was read: %x", b)
 	}

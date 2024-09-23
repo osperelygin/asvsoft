@@ -1,3 +1,4 @@
+// Package neom8t осуществляет чтение и конфигурацию измерений neo m8t
 package neom8t
 
 import (
@@ -51,7 +52,7 @@ func New(cfg *Config, port *serial_port.SerialPort) (*NeoM8t, error) {
 	return n, nil
 }
 
-func (n *NeoM8t) configurate(msgIdList ...byte) error {
+func (n *NeoM8t) configurate(msgIDList ...byte) error {
 	rateBytes := [6]byte{}
 	rateBytes[1] = byte(n.cfg.Rate)
 
@@ -60,7 +61,7 @@ func (n *NeoM8t) configurate(msgIdList ...byte) error {
 		Rate:     rateBytes,
 	}
 
-	for _, msgID := range msgIdList {
+	for _, msgID := range msgIDList {
 		cfgMsg.MsgID = msgID
 
 		b, err := ubx.Encode(cfgMsg)
@@ -82,8 +83,10 @@ func (n *NeoM8t) configurate(msgIdList ...byte) error {
 }
 
 func (n *NeoM8t) Measure() (*proto.GNSSData, error) {
-	var data proto.GNSSData
-	var navPosllhMsgRead, navVelnedMsgRead bool
+	var (
+		data                               proto.GNSSData
+		navPosllhMsgRead, navVelnedMsgRead bool
+	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3*n.cfg.Rate)*time.Second)
 	defer cancel()
@@ -96,6 +99,7 @@ func (n *NeoM8t) Measure() (*proto.GNSSData, error) {
 			msg, err := n.d.Decode()
 			if err != nil {
 				log.Errorf("cannot decode msg: %v", err)
+
 				portError := &serial.PortError{}
 				if errors.As(err, &portError) && portError.Code() == serial.PortClosed {
 					// Пересоздаем порт
@@ -106,6 +110,7 @@ func (n *NeoM8t) Measure() (*proto.GNSSData, error) {
 
 					n.port = port
 					n.d = ublox.NewDecoder(n.port)
+
 					log.Warn("port successfully reopened")
 				}
 			}

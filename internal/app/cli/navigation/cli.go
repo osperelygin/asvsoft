@@ -1,3 +1,4 @@
+// Package navigation предоставляет подкоманду nav
 package navigation
 
 import (
@@ -28,7 +29,7 @@ func Cmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "nav",
 		Short: "блок навигации",
-		Run:   Handler,
+		RunE:  Handler,
 	}
 	imuConfig = common.AddSerialSourceFlags(&cmd, "imu")
 	gnssConfig = common.AddSerialSourceFlags(&cmd, "gnss")
@@ -45,28 +46,28 @@ func Cmd() *cobra.Command {
 	return &cmd
 }
 
-func Handler(cmd *cobra.Command, args []string) {
-	var port serial.Port
-	var err error
+func Handler(_ *cobra.Command, _ []string) error {
+	var (
+		port serial.Port
+		err  error
+	)
 
 	switch mode {
 	case gnssMode:
 		port, err = serial_port.New(gnssConfig)
 		if err != nil {
-			log.Fatalf("cannot init gnss port: %v", err)
+			return fmt.Errorf("cannot init gnss port: %v", err)
 		}
 	case imuMode:
 		port, err = serial_port.New(imuConfig)
 		if err != nil {
-			log.Fatalf("cannot init imu port: %v", err)
+			return fmt.Errorf("cannot init imu port: %v", err)
 		}
 	default:
 		panic(fmt.Sprintf("unknown mode: '%s'", mode))
 	}
 
 	defer port.Close()
-
-	// TODO: добавить обработку sigterm
 
 	packer := proto.Packer{}
 

@@ -55,10 +55,14 @@ issues:
     - should have a package comment, unless it's in another file for this package
     - don't use an underscore in package name
     - should check returned error before deferring
+    - "exported (type|method|function|const) (.+) should have comment"
     # _ instead of err checks
     - G104
-    # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
     - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv|.*Rollback). is not checked
+    # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
+    # выключено из-за all_caps констант модуля sense hat (c)
+    - "don't use ALL_CAPS in Go names; use CamelCase" 
+    - "don't use underscores in Go names; const"
   exclude-dirs:
     - bin
     - test

@@ -1,9 +1,11 @@
+// Package controller предоставляет подкоманду controller
 package controller
 
 import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/pkg/proto"
 	"asvsoft/internal/pkg/serial_port"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -18,22 +20,20 @@ func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "controller",
 		Short: "Режим чтения данных с последовательного порта",
-		Run:   Handler,
+		RunE:  Handler,
 	}
 	depthMeterConfig = common.AddSerialSourceFlags(cmd, "depth-meter")
 
 	return cmd
 }
 
-func Handler(cmd *cobra.Command, args []string) {
+func Handler(_ *cobra.Command, _ []string) error {
 	srcPort, err := serial_port.New(depthMeterConfig)
 	if err != nil {
-		log.Fatalf("cannot open serial port '%s': %v", depthMeterConfig.Port, err)
+		return fmt.Errorf("cannot open serial port '%s': %v", depthMeterConfig.Port, err)
 	}
 
 	defer srcPort.Close()
-
-	// TODO: добавить обработку sigterm
 
 	packer := proto.Packer{}
 
@@ -57,7 +57,7 @@ func Handler(cmd *cobra.Command, args []string) {
 	}
 }
 
-// func Handler(cmd *cobra.Command, args []string) {
+// func Handler(_ *cobra.Command, _ []string) {
 // 	initSPI()
 
 // 	packer := proto.Packer{}

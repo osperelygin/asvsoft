@@ -1,4 +1,4 @@
-// package proto предоставляет коммуникацию определенными в унифицированном протоколе
+// Package proto предоставляет коммуникацию определенными в унифицированном протоколе
 // сообщениями между модулями БКУ
 package proto
 
@@ -58,8 +58,10 @@ func NewPacker() Packer {
 
 // Pack ...
 func (p *Packer) Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
-	var err error
-	var payload []byte
+	var (
+		err     error
+		payload []byte
+	)
 
 	switch addr {
 	case DepthMeterModuleAddr:
@@ -106,9 +108,11 @@ func (p *Packer) Unpack(data []byte) (out any, err error) {
 		return nil, err
 	}
 
-	var id uint8
-	var ts uint32
-	var payloadSize uint8
+	var (
+		id          uint8
+		ts          uint32
+		payloadSize uint8
+	)
 
 	err = dec.Decode(&id, &ts, &payloadSize)
 	if err != nil {
@@ -162,27 +166,28 @@ func Read(r io.Reader, limit int) ([]byte, error) {
 	var rawData []byte
 
 	headerBuff := make([]byte, 3)
-	r.Read(headerBuff)
+	_, _ = r.Read(headerBuff)
 
-	for idx := 0; idx < limit && rawData == nil; idx += 1 {
+	for idx := 0; idx < limit && rawData == nil; idx++ {
 		if !isEqual(syncFramePart, headerBuff) {
 			headerBuff[0] = headerBuff[1]
 			headerBuff[1] = headerBuff[2]
-			r.Read(tmpBuff)
+			_, _ = r.Read(tmpBuff)
 			headerBuff[2] = tmpBuff[0]
+
 			continue
 		}
 
-		r.Read(idBuff)
-		r.Read(tsBuff)
-		r.Read(paylodSizeBuff)
+		_, _ = r.Read(idBuff)
+		_, _ = r.Read(tsBuff)
+		_, _ = r.Read(paylodSizeBuff)
 
 		payloadSize := int(paylodSizeBuff[0])
 		// TODO: получать из пула
 		payloadBuff := make([]byte, payloadSize)
 
-		r.Read(payloadBuff)
-		r.Read(checkSumBuff)
+		_, _ = r.Read(payloadBuff)
+		_, _ = r.Read(checkSumBuff)
 
 		rawData = make([]byte, 0, payloadSize+serviceFramePartSize)
 		rawData = append(rawData, syncFramePart...)
@@ -205,7 +210,7 @@ func isEqual(a, b []byte) bool {
 		return false
 	}
 
-	for idx := 0; idx < len(a); idx += 1 {
+	for idx := 0; idx < len(a); idx++ {
 		if a[idx] != b[idx] {
 			return false
 		}

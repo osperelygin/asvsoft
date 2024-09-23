@@ -1,3 +1,4 @@
+// Package sensehat предоставляет подкоманду sense-hat
 package sensehat
 
 import (
@@ -5,6 +6,7 @@ import (
 	"asvsoft/internal/pkg/proto"
 	sensehat "asvsoft/internal/pkg/sense-hat"
 	"asvsoft/internal/pkg/serial_port"
+	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -21,7 +23,7 @@ func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sense-hat",
 		Short: "Обработка и передача данных SENSE HAT (C)",
-		Run:   Handler,
+		RunE:  Handler,
 	}
 
 	dstCfg = common.AddSerialDestinationFlags(cmd)
@@ -66,10 +68,10 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-func Handler(cmd *cobra.Command, args []string) {
+func Handler(_ *cobra.Command, _ []string) error {
 	imu, err := sensehat.NewIMU(imuCfg)
 	if err != nil {
-		log.Fatalf("cannot init imu: %v", err)
+		return fmt.Errorf("cannot init imu: %v", err)
 	}
 
 	defer func() {
@@ -81,7 +83,7 @@ func Handler(cmd *cobra.Command, args []string) {
 
 	dstPort, err := serial_port.New(dstCfg)
 	if err != nil {
-		log.Fatalf("cannot open serial port '%s': %v", dstCfg.Port, err)
+		return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
 	}
 
 	defer dstPort.Close()

@@ -35,6 +35,7 @@ func NewDecoder(r io.ReadCloser) *Decoder {
 func (dec *Decoder) Read(p []byte) (int, error) {
 	n, err := dec.r.Read(p)
 	dec.numBytesRead += n
+
 	return n, err
 }
 
@@ -42,6 +43,7 @@ func (dec *Decoder) Read(p []byte) (int, error) {
 func (dec *Decoder) Discard(n int) (discarded int, err error) {
 	discarded, err = dec.r.Discard(n)
 	dec.numBytesRead += discarded
+
 	return discarded, err
 }
 
@@ -62,6 +64,7 @@ func (dec *Decoder) Slice(n int) ([]byte, error) {
 	buf := make([]byte, n)
 	n, err := io.ReadFull(dec.r, buf)
 	dec.numBytesRead += n
+
 	return buf, err
 }
 
@@ -72,8 +75,7 @@ func (dec *Decoder) NumBytesRead() int {
 
 // Decode reads the next binary value from its
 // input and stores it in the value pointed to by v.
-func (dec *Decoder) Decode(values ...any) error {
-	var err error
+func (dec *Decoder) Decode(values ...any) (err error) {
 	for _, untyped := range values {
 		switch v := untyped.(type) {
 		case *uint8:
@@ -200,7 +202,7 @@ func (dec *Decoder) I32() (int32, error) {
 func decodeBytes[T ubytes](d *Decoder) (res T, err error) {
 	n := bytesOf(res)
 
-	for i := 0; i < n; i += 1 {
+	for i := 0; i < n; i++ {
 		c, err := d.U8()
 		if err != nil {
 			return res, err
@@ -215,7 +217,7 @@ func decodeBytes[T ubytes](d *Decoder) (res T, err error) {
 func decodeSignedBytes[T sbytes](d *Decoder) (res T, err error) {
 	n := bytesOf(res)
 
-	for i := 0; i < n-1; i += 1 {
+	for i := 0; i < n-1; i++ {
 		c, err := d.U8()
 		if err != nil {
 			return res, err

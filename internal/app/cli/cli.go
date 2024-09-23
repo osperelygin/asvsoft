@@ -1,3 +1,4 @@
+// Package cli предоставляет корневую команду asvsoft
 package cli
 
 import (

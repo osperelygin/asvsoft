@@ -28,8 +28,10 @@ const (
 )
 
 func (p *Packer) packDepthMeterData(in *DepthMeterData, msgID MessageID) ([]byte, error) {
-	var buf *bytes.Buffer
-	var err error
+	var (
+		buf *bytes.Buffer
+		err error
+	)
 
 	switch msgID {
 	case WritingModeA:
@@ -42,9 +44,8 @@ func (p *Packer) packDepthMeterData(in *DepthMeterData, msgID MessageID) ([]byte
 	return buf.Bytes(), err
 }
 
-func (p *Packer) unpackDepthMeterData(in []byte, msgID MessageID) (*DepthMeterData, error) {
-	var err error
-	out := new(DepthMeterData)
+func (p *Packer) unpackDepthMeterData(in []byte, msgID MessageID) (out *DepthMeterData, err error) {
+	out = new(DepthMeterData)
 
 	switch msgID {
 	case WritingModeA:

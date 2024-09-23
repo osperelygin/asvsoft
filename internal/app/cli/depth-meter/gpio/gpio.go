@@ -1,3 +1,4 @@
+// Package gpio ...
 package gpio
 
 import (
@@ -24,7 +25,7 @@ const (
 	bufferSize = 32
 )
 
-func Handler(cmd *cobra.Command, args []string) {
+func Handler(_ *cobra.Command, _ []string) {
 	err := rpio.Open()
 	if err != nil {
 		log.Fatalf("cannot open rpio: %v", err)
@@ -45,8 +46,8 @@ func Handler(cmd *cobra.Command, args []string) {
 	byteBuffer := [byteSize]byte{}
 
 	for {
-		for b := 0; b < bufferSize; b += 1 {
-			for idx := 0; idx < byteSize; idx += 1 {
+		for b := 0; b < bufferSize; b++ {
+			for idx := 0; idx < byteSize; idx++ {
 				byteBuffer[idx] = byte(rx.Read())
 			}
 
@@ -59,8 +60,8 @@ func Handler(cmd *cobra.Command, args []string) {
 
 func convertToByte(bits [byteSize]byte) byte {
 	var res byte
-	
-	for idx := 0; idx < byteSize; idx += 1 {
+
+	for idx := 0; idx < byteSize; idx++ {
 		res += bits[idx] << idx
 	}
 

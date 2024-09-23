@@ -1,4 +1,4 @@
-// package encoder занимается кодирование/декодирование бинарных данных
+// Package encoder занимается кодирование/декодирование бинарных данных
 package encoder
 
 import (
@@ -122,11 +122,12 @@ func encodeBytes[T ubytes](enc *Encoder, v T) error {
 	n := bytesOf(v)
 	b := make([]byte, 0, n)
 
-	for i := 0; i < n; i += 1 {
+	for i := 0; i < n; i++ {
 		b = append(b, byte(v>>(i*8)))
 	}
 
 	_, err := enc.w.Write(b)
+
 	return err
 }
 
@@ -140,7 +141,7 @@ func encodeSignedBytes[T sbytes](enc *Encoder, v T) error {
 		isNegative = true
 	}
 
-	for i := 0; i < n; i += 1 {
+	for i := 0; i < n; i++ {
 		b = append(b, byte(v>>(i*8)))
 	}
 
@@ -149,6 +150,7 @@ func encodeSignedBytes[T sbytes](enc *Encoder, v T) error {
 	}
 
 	_, err := enc.w.Write(b)
+
 	return err
 }
 

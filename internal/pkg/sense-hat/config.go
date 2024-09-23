@@ -1,3 +1,4 @@
+// Package sensehat предоставляет функционал для чтения и конфигурации измерения sense hat (c)
 package sensehat
 
 import "fmt"
@@ -41,7 +42,7 @@ func (c *SensorConfig) validate() error {
 	}
 
 	if _, ok := c.orderMap[c.Order]; !ok {
-		return &ConfigError{fmt.Sprintf("unknown sensor order: %d", c.Order)}
+		return &ConfigError{fmt.Sprintf("unknown sensor order: %f", c.Order)}
 	}
 
 	if _, ok := c.rangeMap[c.Range]; !ok {
