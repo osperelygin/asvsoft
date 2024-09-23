@@ -4,6 +4,7 @@ import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/pkg/proto"
 	sensehat "asvsoft/internal/pkg/sense-hat"
+	"asvsoft/internal/pkg/serial_port"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -12,7 +13,7 @@ import (
 
 var (
 	period time.Duration
-	dstCfg *common.SerialConfig
+	dstCfg *serial_port.SerialPortConfig
 	imuCfg *sensehat.ImuConfig
 )
 
@@ -78,12 +79,12 @@ func Handler(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	dstPort, err := common.InitSerialPort(dstCfg)
+	dstPort, err := serial_port.New(dstCfg)
 	if err != nil {
 		log.Fatalf("cannot open serial port '%s': %v", dstCfg.Port, err)
 	}
 
-	defer common.CloseSerialPort(dstPort)
+	defer dstPort.Close()
 
 	var packer proto.Packer
 

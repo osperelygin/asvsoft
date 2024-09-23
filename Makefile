@@ -2,9 +2,9 @@ PWD = $(CURDIR)
 # Имя сервиса
 SERVICE_NAME := asvsoft
 # Дефолтная ОС
-GOOS := linux
+GOOS ?= linux
 # Дефолтная архитектура
-GOARCH := arm
+GOARCH ?= arm
 # Время сборки
 BUILD_DATE = $(shell TZ=UTC-3 date +%Y-%m-%dT%H:%M)
 # Ветка

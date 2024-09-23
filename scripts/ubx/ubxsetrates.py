@@ -52,6 +52,7 @@ def main(**kwargs):
         for msgid, msgname in UBX_MSGIDS.items():
             if not msgname in target_msgs:
                 continue
+            
             msg = UBXMessage(
                 "CFG",
                 "CFG-MSG",
@@ -60,13 +61,16 @@ def main(**kwargs):
                 msgID=msgid[1],
                 rateUART1=rate,
             )
+            serialized_msg = msg.serialize()
+
             print(f"Setting message rate for {msgname} message type to {rate}...\n")
+            print(f"Serialized message: {list(serialized_msg)}")
 
-            serial.write(msg.serialize())
-
+            serial.write(serialized_msg)
             sleep(1)
 
         if enable_reading:
+            print("reading target messages...")
             read_target_messages(serial)
 
 

@@ -4,6 +4,7 @@ import (
 	"asvsoft/internal/app/cli/common"
 	depthmeter "asvsoft/internal/app/sensors/depth-meter"
 	"asvsoft/internal/pkg/proto"
+	"asvsoft/internal/pkg/serial_port"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -12,8 +13,8 @@ import (
 )
 
 var (
-	dstCfg *common.SerialConfig
-	srcCfg *common.SerialConfig
+	dstCfg *serial_port.SerialPortConfig
+	srcCfg *serial_port.SerialPortConfig
 )
 
 func Cmd() *cobra.Command {
@@ -29,19 +30,19 @@ func Cmd() *cobra.Command {
 }
 
 func Handler(cmd *cobra.Command, args []string) {
-	srcPort, err := common.InitSerialPort(srcCfg)
+	srcPort, err := serial_port.New(srcCfg)
 	if err != nil {
 		log.Fatalf("cannot init depth meter port '%s': %v", srcCfg.Port, err)
 	}
 
-	defer common.CloseSerialPort(srcPort)
+	defer srcPort.Close()
 
-	dstPort, err := common.InitSerialPort(dstCfg)
+	dstPort, err := serial_port.New(dstCfg)
 	if err != nil {
 		log.Fatalf("cannot open serial port '%s': %v", dstCfg.Port, err)
 	}
 
-	defer common.CloseSerialPort(dstPort)
+	defer dstPort.Close()
 
 	dm := depthmeter.New(srcPort)
 	packer := proto.NewPacker()

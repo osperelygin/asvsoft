@@ -3,6 +3,7 @@ package controller
 import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/pkg/proto"
+	"asvsoft/internal/pkg/serial_port"
 
 	log "github.com/sirupsen/logrus"
 
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	depthMeterConfig *common.SerialConfig
+	depthMeterConfig *serial_port.SerialPortConfig
 )
 
 func Cmd() *cobra.Command {
@@ -25,12 +26,12 @@ func Cmd() *cobra.Command {
 }
 
 func Handler(cmd *cobra.Command, args []string) {
-	srcPort, err := common.InitSerialPort(depthMeterConfig)
+	srcPort, err := serial_port.New(depthMeterConfig)
 	if err != nil {
 		log.Fatalf("cannot open serial port '%s': %v", depthMeterConfig.Port, err)
 	}
 
-	defer common.CloseSerialPort(srcPort)
+	defer srcPort.Close()
 
 	// TODO: добавить обработку sigterm
 

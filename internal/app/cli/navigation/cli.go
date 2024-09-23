@@ -5,16 +5,23 @@ import (
 	"asvsoft/internal/app/cli/navigation/neo"
 	sensehat "asvsoft/internal/app/cli/navigation/sense-hat"
 	"asvsoft/internal/pkg/proto"
+	"asvsoft/internal/pkg/serial_port"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go.bug.st/serial"
 )
 
+const (
+	gnssMode = "gnss"
+	imuMode  = "imu"
+)
+
 var (
-	mode           string
-	senseHatConfig *common.SerialConfig
-	neoConfig      *common.SerialConfig
+	mode       string
+	imuConfig  *serial_port.SerialPortConfig
+	gnssConfig *serial_port.SerialPortConfig
 )
 
 func Cmd() *cobra.Command {
@@ -23,12 +30,12 @@ func Cmd() *cobra.Command {
 		Short: "блок навигации",
 		Run:   Handler,
 	}
-	senseHatConfig = common.AddSerialSourceFlags(&cmd, "sensehat")
-	neoConfig = common.AddSerialSourceFlags(&cmd, "neo")
+	imuConfig = common.AddSerialSourceFlags(&cmd, "imu")
+	gnssConfig = common.AddSerialSourceFlags(&cmd, "gnss")
 
 	cmd.Flags().StringVar(
 		&mode, "mode",
-		"gnss", "режим чтения данных: gnss/imu",
+		gnssMode, "режим чтения данных: gnss/imu",
 	)
 	cmd.AddCommand(
 		sensehat.Cmd(),
@@ -43,21 +50,21 @@ func Handler(cmd *cobra.Command, args []string) {
 	var err error
 
 	switch mode {
-	case "gnss":
-		port, err = common.InitSerialPort(neoConfig)
+	case gnssMode:
+		port, err = serial_port.New(gnssConfig)
 		if err != nil {
-			log.Fatalf("cannot init neo port: %v", err)
+			log.Fatalf("cannot init gnss port: %v", err)
 		}
-	case "imu":
-		port, err = common.InitSerialPort(neoConfig)
+	case imuMode:
+		port, err = serial_port.New(imuConfig)
 		if err != nil {
-			log.Fatalf("cannot init neo port: %v", err)
+			log.Fatalf("cannot init imu port: %v", err)
 		}
 	default:
-		panic("unknown mode")
+		panic(fmt.Sprintf("unknown mode: '%s'", mode))
 	}
 
-	defer common.CloseSerialPort(port)
+	defer port.Close()
 
 	// TODO: добавить обработку sigterm
 
