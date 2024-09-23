@@ -10,7 +10,7 @@ import (
 
 var readBufferPool = sync.Pool{
 	New: func() any {
-		return bufio.NewReaderSize(nil, 32*common.KB)
+		return bufio.NewReaderSize(nil, 1024)
 	},
 }
 

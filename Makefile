@@ -30,13 +30,18 @@ lint:
 # Запуск тестов и подсчет процента покрытия тестами
 .PHONY: test
 test:
-	$(GO_BIN) test -parallel=10 -cover $$(go list ./... | grep /internal/pkg/proto)
+	$(GO_BIN) test -parallel=10 -cover -coverprofile coverage.out ./internal/pkg/proto/...
 	@echo "test passed"
+
+# Cоздание отчета о покрытии тестами
+.PHONY: cover
+cover: test
+	go tool cover -html=coverage.out
 
 # Запуск бенчмарков
 .PHONY: bench
 bench:
-	$(GO_BIN) test -bench=. -benchmem $$(go list ./... | grep /internal/pkg/proto)
+	$(GO_BIN) test -bench=. -benchmem ./internal/pkg/proto/...
 	@echo "bench executed"
 
 # Линтер проверяет полностью весь код сервиса
