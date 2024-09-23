@@ -3,7 +3,7 @@ package neo
 
 import (
 	"asvsoft/internal/app/cli/common"
-	neom8t "asvsoft/internal/pkg/neo-m8t"
+	neom8t "asvsoft/internal/app/sensors/neo-m8t"
 	"asvsoft/internal/pkg/proto"
 	"asvsoft/internal/pkg/serial_port"
 	"fmt"

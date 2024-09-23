@@ -3,8 +3,8 @@ package sensehat
 
 import (
 	"asvsoft/internal/app/cli/common"
+	sensehat "asvsoft/internal/app/sensors/sense-hat"
 	"asvsoft/internal/pkg/proto"
-	sensehat "asvsoft/internal/pkg/sense-hat"
 	"asvsoft/internal/pkg/serial_port"
 	"fmt"
 	"time"
