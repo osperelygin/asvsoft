@@ -45,7 +45,7 @@ type NavigationModuleData struct {
 	GNSSData
 }
 
-func (p *Packer) packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
+func packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
 		err error
@@ -81,7 +81,7 @@ func (p *Packer) packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (p *Packer) unpackIMUData(in []byte, msgID MessageID) (out *IMUData, err error) {
+func unpackIMUData(in []byte, msgID MessageID) (out *IMUData, err error) {
 	out = new(IMUData)
 
 	switch msgID {
@@ -114,7 +114,7 @@ func (p *Packer) unpackIMUData(in []byte, msgID MessageID) (out *IMUData, err er
 	return out, err
 }
 
-func (p *Packer) packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
+func packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
 		err error
@@ -158,7 +158,7 @@ func (p *Packer) packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (p *Packer) unpackGNSSData(in []byte, msgID MessageID) (out *GNSSData, err error) {
+func unpackGNSSData(in []byte, msgID MessageID) (out *GNSSData, err error) {
 	out = new(GNSSData)
 
 	switch msgID {

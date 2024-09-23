@@ -39,7 +39,7 @@ func (ct *CommonTransmitter) Transmit(_ context.Context, data any) error {
 		return nil
 	}
 
-	b, err := proto.NewPacker().Pack(data, ct.addr, ct.mode)
+	b, err := proto.Pack(data, ct.addr, ct.mode)
 	if err != nil {
 		return fmt.Errorf("cannot pack measure: %w", err)
 	}

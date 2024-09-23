@@ -62,15 +62,13 @@ func Handler(_ *cobra.Command, _ []string) error {
 
 	defer port.Close()
 
-	packer := proto.Packer{}
-
 	for {
 		rawData, err := proto.Read(port)
 		if err != nil {
 			log.Errorf("read data from source port failed: %v", err)
 		}
 
-		data, err := packer.Unpack(rawData)
+		data, err := proto.Unpack(rawData)
 		if err != nil {
 			log.Errorf("unpack failed: %v", err)
 		}

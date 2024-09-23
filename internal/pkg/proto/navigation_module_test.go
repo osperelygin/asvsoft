@@ -14,22 +14,20 @@ func TestPackIMUDataSuccess(t *testing.T) {
 		Mx: 10000, My: 10001, Mz: -10010,
 	}
 
-	packer := Packer{}
-
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		packedData, err := packer.Pack(data, IMUModuleAddr, WritingModeA)
+		packedData, err := Pack(data, IMUModuleAddr, WritingModeA)
 		assert.NoError(t, err)
 
-		out, err := packer.Unpack(packedData)
+		out, err := Unpack(packedData)
 		assert.NoError(t, err)
 		assert.Equal(t, data, out.(*IMUData))
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		packedData, err := packer.Pack(data, IMUModuleAddr, WritingModeB)
+		packedData, err := Pack(data, IMUModuleAddr, WritingModeB)
 		assert.NoError(t, err)
 
-		out, err := packer.Unpack(packedData)
+		out, err := Unpack(packedData)
 		assert.NoError(t, err)
 		assert.Equal(t, &IMUData{
 			Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
@@ -38,10 +36,10 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		packedData, err := packer.Pack(data, IMUModuleAddr, WritingModeC)
+		packedData, err := Pack(data, IMUModuleAddr, WritingModeC)
 		assert.NoError(t, err)
 
-		out, err := packer.Unpack(packedData)
+		out, err := Unpack(packedData)
 		assert.NoError(t, err)
 		assert.Equal(t, &IMUData{
 			Mx: data.Mx, My: data.My, Mz: data.Mz,
@@ -69,22 +67,20 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 		CAcc:          40,
 	}
 
-	packer := Packer{}
-
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		packedData, err := packer.Pack(data, GNSSModuleAddr, WritingModeA)
+		packedData, err := Pack(data, GNSSModuleAddr, WritingModeA)
 		assert.NoError(t, err)
 
-		out, err := packer.Unpack(packedData)
+		out, err := Unpack(packedData)
 		assert.NoError(t, err)
 		assert.Equal(t, data, out.(*GNSSData))
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		packedData, err := packer.Pack(data, GNSSModuleAddr, WritingModeB)
+		packedData, err := Pack(data, GNSSModuleAddr, WritingModeB)
 		assert.NoError(t, err)
 
-		out, err := packer.Unpack(packedData)
+		out, err := Unpack(packedData)
 		assert.NoError(t, err)
 		assert.Equal(t, &GNSSData{
 			ITowNAVPOSLLH: data.ITowNAVPOSLLH,
@@ -98,10 +94,10 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		packedData, err := packer.Pack(data, GNSSModuleAddr, WritingModeC)
+		packedData, err := Pack(data, GNSSModuleAddr, WritingModeC)
 		assert.NoError(t, err)
 
-		out, err := packer.Unpack(packedData)
+		out, err := Unpack(packedData)
 		assert.NoError(t, err)
 		assert.Equal(t, &GNSSData{
 			ITowNAVVELNED: data.ITowNAVVELNED,

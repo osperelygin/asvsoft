@@ -27,7 +27,7 @@ const (
 	depthMeterPaylodSizeModeA = 12
 )
 
-func (p *Packer) packDepthMeterData(in *DepthMeterData, msgID MessageID) ([]byte, error) {
+func packDepthMeterData(in *DepthMeterData, msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
 		err error
@@ -44,7 +44,7 @@ func (p *Packer) packDepthMeterData(in *DepthMeterData, msgID MessageID) ([]byte
 	return buf.Bytes(), err
 }
 
-func (p *Packer) unpackDepthMeterData(in []byte, msgID MessageID) (out *DepthMeterData, err error) {
+func unpackDepthMeterData(in []byte, msgID MessageID) (out *DepthMeterData, err error) {
 	out = new(DepthMeterData)
 
 	switch msgID {

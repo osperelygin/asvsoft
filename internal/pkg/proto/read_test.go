@@ -9,7 +9,7 @@ import (
 
 func TestRead(t *testing.T) {
 	t.Run("успешное чтение фрейма протокола из потока байтов", func(t *testing.T) {
-		packedData, err := NewPacker().Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
+		packedData, err := Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
 		assert.NoError(t, err)
 
 		noiseBytes := []byte{0x01, 0x00, 0xFF, syncFramePart[0], syncFramePart[1], 0x05, 0x06}
@@ -33,7 +33,7 @@ func TestRead(t *testing.T) {
 }
 
 func BenchmarkRead(b *testing.B) {
-	packedData, _ := NewPacker().Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
+	packedData, _ := Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
 
 	noiseBytes := []byte{0x01, 0x00, 0xFF, syncFramePart[0], syncFramePart[1], 0x05, 0x06}
 

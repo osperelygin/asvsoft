@@ -14,14 +14,8 @@ import (
 
 var syncFramePart = []byte{0x57, 0x10, 0xFF}
 
-type Packer struct{}
-
-func NewPacker() *Packer {
-	return &Packer{}
-}
-
 // Pack ...
-func (p *Packer) Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
+func Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
 	var (
 		err     error
 		payload []byte
@@ -29,11 +23,11 @@ func (p *Packer) Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
 
 	switch addr {
 	case DepthMeterModuleAddr:
-		payload, err = p.packDepthMeterData(data.(*DepthMeterData), msgID)
+		payload, err = packDepthMeterData(data.(*DepthMeterData), msgID)
 	case IMUModuleAddr:
-		payload, err = p.packIMUData(data.(*IMUData), msgID)
+		payload, err = packIMUData(data.(*IMUData), msgID)
 	case GNSSModuleAddr:
-		payload, err = p.packGNSSData(data.(*GNSSData), msgID)
+		payload, err = packGNSSData(data.(*GNSSData), msgID)
 	default:
 		panic(fmt.Sprintf("Pack is not implemented for this addr (%x)", addr))
 	}
@@ -62,7 +56,7 @@ func (p *Packer) Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
 }
 
 // Unpack ...
-func (p *Packer) Unpack(data []byte) (out any, err error) {
+func Unpack(data []byte) (out any, err error) {
 	dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(data)))
 	defer dec.Close()
 
@@ -104,11 +98,11 @@ func (p *Packer) Unpack(data []byte) (out any, err error) {
 
 	switch addr {
 	case DepthMeterModuleAddr:
-		out, err = p.unpackDepthMeterData(payload, msgID)
+		out, err = unpackDepthMeterData(payload, msgID)
 	case IMUModuleAddr:
-		out, err = p.unpackIMUData(payload, msgID)
+		out, err = unpackIMUData(payload, msgID)
 	case GNSSModuleAddr:
-		out, err = p.unpackGNSSData(payload, msgID)
+		out, err = unpackGNSSData(payload, msgID)
 	default:
 		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", addr))
 	}
