@@ -33,7 +33,6 @@ func Init(ctx context.Context, mode RunMode) (m measurer.Measurer, t transmitter
 		if err != nil {
 			return nil, nil, err
 		}
-		defer srcPort.Close()
 
 		srcPort.SetLogger(log.StandardLogger())
 	}
@@ -45,7 +44,6 @@ func Init(ctx context.Context, mode RunMode) (m measurer.Measurer, t transmitter
 		if err != nil {
 			return nil, nil, err
 		}
-		defer dstPort.Close()
 
 		dstPort.SetLogger(log.StandardLogger())
 	}
@@ -61,7 +59,7 @@ func Init(ctx context.Context, mode RunMode) (m measurer.Measurer, t transmitter
 			ct.SetWritter(dstPort)
 		}
 	case NeoM8tMode:
-		_, err := neom8t.New(cfg.NeoM8t, srcPort)
+		_, err = neom8t.New(cfg.NeoM8t, srcPort)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -71,7 +69,7 @@ func Init(ctx context.Context, mode RunMode) (m measurer.Measurer, t transmitter
 			ct.SetWritter(dstPort)
 		}
 	case ImuMode:
-		_, err := sensehat.NewIMU(cfg.Imu)
+		m, err = sensehat.NewIMU(cfg.Imu)
 		if err != nil {
 			return nil, nil, err
 		}

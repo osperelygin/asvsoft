@@ -1,7 +1,10 @@
 // Package sensehat предоставляет функционал для чтения и конфигурации измерения sense hat (c)
 package sensehat
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 const (
 	IntertialMode = "inertial"
@@ -17,10 +20,11 @@ func (err *ConfigError) Error() string {
 }
 
 type ImuConfig struct {
-	Mode string
-	Acc  SensorConfig
-	Gyr  SensorConfig
-	Mag  SensorConfig
+	Period time.Duration
+	Mode   string
+	Acc    SensorConfig
+	Gyr    SensorConfig
+	Mag    SensorConfig
 }
 
 type SensorConfig struct {

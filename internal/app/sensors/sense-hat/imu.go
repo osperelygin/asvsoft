@@ -1,9 +1,12 @@
 package sensehat
 
 import (
+	"asvsoft/internal/app/ds"
 	"asvsoft/internal/pkg/encoder"
+	"asvsoft/internal/pkg/measurer"
 	"asvsoft/internal/pkg/proto"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"time"
@@ -18,12 +21,6 @@ type configCmd struct {
 	val byte
 }
 
-type Imu interface {
-	io.Closer
-	Measure() (*proto.IMUData, error)
-	RawMeasure() ([]byte, error)
-}
-
 type IMU struct {
 	buf         []byte
 	config      *ImuConfig
@@ -31,7 +28,7 @@ type IMU struct {
 	magnBus     *i2c.I2C
 }
 
-func NewIMU(config *ImuConfig) (Imu, error) {
+func NewIMU(config *ImuConfig) (*IMU, error) {
 	err := config.validate()
 	if err != nil {
 		return nil, err
@@ -70,7 +67,12 @@ func NewIMU(config *ImuConfig) (Imu, error) {
 	return imu, nil
 }
 
-func (imu *IMU) Measure() (*proto.IMUData, error) {
+func (imu *IMU) Measure(_ context.Context) measurer.Measurement {
+	time.Sleep(imu.config.Period)
+	return ds.NewMeasurement(imu.measure())
+}
+
+func (imu *IMU) measure() (*proto.IMUData, error) {
 	b, err := imu.RawMeasure()
 	if err != nil {
 		return nil, err

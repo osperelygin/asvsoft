@@ -18,6 +18,7 @@ type Measurement interface {
 
 type Measurer interface {
 	Measure(ctx context.Context) Measurement
+	Close() error
 }
 
 func Run(ctx context.Context, m Measurer, t transmitter.Transmitter) error {
@@ -32,7 +33,13 @@ func Run(ctx context.Context, m Measurer, t transmitter.Transmitter) error {
 		for {
 			select {
 			case <-ctx.Done():
+				err := m.Close()
+				if err != nil {
+					log.Errorf("failed to close measurer: %v", err)
+				}
+
 				close(measurementChan)
+
 				return
 			default:
 				measurementChan <- m.Measure(ctx)

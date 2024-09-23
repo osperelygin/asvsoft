@@ -27,10 +27,10 @@ var (
 )
 
 type DepthMeter struct {
-	r io.Reader
+	r io.ReadCloser
 }
 
-func New(r io.Reader) *DepthMeter {
+func New(r io.ReadCloser) *DepthMeter {
 	return &DepthMeter{
 		r: r,
 	}
@@ -38,6 +38,10 @@ func New(r io.Reader) *DepthMeter {
 
 func (dm *DepthMeter) Measure(_ context.Context) measurer.Measurement {
 	return ds.NewMeasurement(dm.read())
+}
+
+func (dm *DepthMeter) Close() error {
+	return dm.r.Close()
 }
 
 func (dm *DepthMeter) read() (*proto.DepthMeterData, error) {
