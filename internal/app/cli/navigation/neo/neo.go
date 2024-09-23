@@ -3,19 +3,15 @@ package neo
 
 import (
 	"asvsoft/internal/app/cli/common"
+	"asvsoft/internal/app/config"
 	neom8t "asvsoft/internal/app/sensors/neo-m8t"
-	"asvsoft/internal/pkg/proto"
-	serialport "asvsoft/internal/pkg/serial-port"
-	"fmt"
+	"asvsoft/internal/pkg/measurer"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var (
-	dstCfg    *serialport.Config
-	srcCfg    *serialport.Config
-	neoConfig neom8t.Config
+	cfg config.Config
 )
 
 func Cmd() *cobra.Command {
@@ -24,64 +20,30 @@ func Cmd() *cobra.Command {
 		Short: "Режим чтения данных с последовательного порта",
 		RunE:  Handler,
 	}
-	dstCfg = common.AddSerialDestinationFlags(cmd)
-	srcCfg = common.AddSerialSourceFlags(cmd)
+	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
+	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)
+	cfg.NeoM8t = new(neom8t.Config)
 
 	cmd.Flags().IntVar(
-		&neoConfig.Rate, "rate",
+		&cfg.NeoM8t.Rate, "rate",
 		1, "navigation solution rate in second",
 	)
 
 	return cmd
 }
 
-func Handler(_ *cobra.Command, _ []string) error {
-	srcPort, err := serialport.New(srcCfg)
+func Handler(cmd *cobra.Command, args []string) error { // nolint: revive
+	ctx := config.WrapContext(cmd.Context(), &cfg)
+
+	m, t, err := common.Init(ctx, common.NeoM8tMode)
 	if err != nil {
-		return fmt.Errorf("cannot open serial port '%s': %v", srcCfg.Port, err)
+		return err
 	}
-	defer srcPort.Close()
 
-	var dstPort *serialport.Wrapper
-
-	if !dstCfg.TransmittingDisabled {
-		dstPort, err = serialport.New(dstCfg)
-		if err != nil {
-			return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
-		}
-	}
-	defer dstPort.Close()
-
-	neo, err := neom8t.New(&neoConfig, srcPort)
+	err = measurer.Run(ctx, m, t)
 	if err != nil {
-		return fmt.Errorf("cannot create neo instance: %v", err)
+		return err
 	}
 
-	packer := proto.NewPacker()
-
-	for {
-		measure, err := neo.Measure()
-		if err != nil {
-			log.Errorf("cannot decode message: %v", err)
-			continue
-		}
-
-		log.Printf("transmitted: %#v", measure)
-
-		b, err := packer.Pack(measure, proto.GNSSModuleAddr, proto.WritingModeA)
-		if err != nil {
-			log.Errorf("cannot pack measure: %v", err)
-			continue
-		}
-
-		if dstCfg.TransmittingDisabled {
-			continue
-		}
-
-		_, err = dstPort.Write(b)
-		if err != nil {
-			log.Errorf("cannot write measures: %v", err)
-			continue
-		}
-	}
+	return nil
 }

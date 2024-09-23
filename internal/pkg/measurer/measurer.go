@@ -23,6 +23,7 @@ type Measurer interface {
 
 func Run(ctx context.Context, m Measurer, t transmitter.Transmitter) error {
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

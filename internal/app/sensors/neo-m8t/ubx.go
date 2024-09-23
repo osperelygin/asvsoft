@@ -2,17 +2,17 @@
 package neom8t
 
 import (
+	"asvsoft/internal/app/ds"
+	"asvsoft/internal/pkg/measurer"
 	"asvsoft/internal/pkg/proto"
-	serialport "asvsoft/internal/pkg/serial-port"
 	"context"
-	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/daedaleanai/ublox"
 	"github.com/daedaleanai/ublox/ubx"
 	log "github.com/sirupsen/logrus"
-	"go.bug.st/serial"
 )
 
 const (
@@ -27,18 +27,18 @@ type Config struct {
 }
 
 type NeoM8t struct {
-	port *serialport.Wrapper
-	cfg  *Config
-	d    *ublox.Decoder
+	cfg *Config
+	d   *ublox.Decoder
+	r   io.ReadWriteCloser
 }
 
-func New(cfg *Config, port *serialport.Wrapper) (*NeoM8t, error) {
+func New(cfg *Config, r io.ReadWriteCloser) (*NeoM8t, error) {
 	n := &NeoM8t{
-		cfg:  cfg,
-		port: port,
+		cfg: cfg,
+		r:   r,
 	}
 
-	n.d = ublox.NewDecoder(n.port)
+	n.d = ublox.NewDecoder(n.r)
 
 	// configurate NAV-POSLLH, NAV-VELNED rate
 	err := n.configurate(0x02, 0x12)
@@ -71,7 +71,7 @@ func (n *NeoM8t) configurate(msgIDList ...byte) error {
 
 		log.Infof("writting cfg msg: %v", b)
 
-		_, err = n.port.Write(b)
+		_, err = n.r.Write(b)
 		if err != nil {
 			return fmt.Errorf("cannot write cfg msg: %w", err)
 		}
@@ -82,7 +82,15 @@ func (n *NeoM8t) configurate(msgIDList ...byte) error {
 	return nil
 }
 
-func (n *NeoM8t) Measure() (*proto.GNSSData, error) {
+func (n *NeoM8t) Measure(_ context.Context) measurer.Measurement {
+	return ds.NewMeasurement(n.measure())
+}
+
+func (n *NeoM8t) Close() error {
+	return n.r.Close()
+}
+
+func (n *NeoM8t) measure() (*proto.GNSSData, error) {
 	var (
 		data                               proto.GNSSData
 		navPosllhMsgRead, navVelnedMsgRead bool
@@ -99,20 +107,6 @@ func (n *NeoM8t) Measure() (*proto.GNSSData, error) {
 			msg, err := n.d.Decode()
 			if err != nil {
 				log.Errorf("cannot decode msg: %v", err)
-
-				portError := &serial.PortError{}
-				if errors.As(err, &portError) && portError.Code() == serial.PortClosed {
-					// Пересоздаем порт
-					port, err := serialport.New(n.port.Cfg)
-					if err != nil {
-						return nil, fmt.Errorf("port closed and failed to reopen: %w", err)
-					}
-
-					n.port = port
-					n.d = ublox.NewDecoder(n.port)
-
-					log.Warn("port successfully reopened")
-				}
 			}
 
 			if navPosllhMsg, ok := msg.(*ubx.NavPosllh); ok {

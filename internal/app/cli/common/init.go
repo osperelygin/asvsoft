@@ -59,7 +59,7 @@ func Init(ctx context.Context, mode RunMode) (m measurer.Measurer, t transmitter
 			ct.SetWritter(dstPort)
 		}
 	case NeoM8tMode:
-		_, err = neom8t.New(cfg.NeoM8t, srcPort)
+		m, err = neom8t.New(cfg.NeoM8t, srcPort)
 		if err != nil {
 			return nil, nil, err
 		}
