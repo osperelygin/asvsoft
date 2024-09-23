@@ -40,7 +40,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 	for {
 		rawData, err := proto.Read(srcPort, 1<<10)
 		if err != nil {
-			log.Errorf("spi read failed: %v", err)
+			log.Errorf("read failed: %v", err)
 		}
 
 		data, err := packer.Unpack(rawData)

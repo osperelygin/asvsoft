@@ -81,11 +81,14 @@ func Handler(_ *cobra.Command, _ []string) error {
 		}
 	}()
 
-	dstPort, err := serial_port.New(dstCfg)
-	if err != nil {
-		return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
-	}
+	var dstPort *serial_port.SerialPort
 
+	if !dstCfg.TransmittingDisabled {
+		dstPort, err = serial_port.New(dstCfg)
+		if err != nil {
+			return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
+		}
+	}
 	defer dstPort.Close()
 
 	var packer proto.Packer
@@ -103,6 +106,10 @@ func Handler(_ *cobra.Command, _ []string) error {
 		b, err := packer.Pack(measure, proto.IMUModuleAddr, proto.WritingModeA)
 		if err != nil {
 			log.Errorf("cannot pack data: %v", err)
+			continue
+		}
+
+		if dstCfg.TransmittingDisabled {
 			continue
 		}
 

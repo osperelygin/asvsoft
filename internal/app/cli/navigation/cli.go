@@ -20,9 +20,8 @@ const (
 )
 
 var (
-	mode       string
-	imuConfig  *serial_port.SerialPortConfig
-	gnssConfig *serial_port.SerialPortConfig
+	mode   string
+	srcCfg *serial_port.SerialPortConfig
 )
 
 func Cmd() *cobra.Command {
@@ -31,8 +30,7 @@ func Cmd() *cobra.Command {
 		Short: "блок навигации",
 		RunE:  Handler,
 	}
-	imuConfig = common.AddSerialSourceFlags(&cmd, "imu")
-	gnssConfig = common.AddSerialSourceFlags(&cmd, "gnss")
+	srcCfg = common.AddSerialSourceFlags(&cmd, "")
 
 	cmd.Flags().StringVar(
 		&mode, "mode",
@@ -53,15 +51,10 @@ func Handler(_ *cobra.Command, _ []string) error {
 	)
 
 	switch mode {
-	case gnssMode:
-		port, err = serial_port.New(gnssConfig)
+	case gnssMode, imuMode:
+		port, err = serial_port.New(srcCfg)
 		if err != nil {
 			return fmt.Errorf("cannot init gnss port: %v", err)
-		}
-	case imuMode:
-		port, err = serial_port.New(imuConfig)
-		if err != nil {
-			return fmt.Errorf("cannot init imu port: %v", err)
 		}
 	default:
 		panic(fmt.Sprintf("unknown mode: '%s'", mode))

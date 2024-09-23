@@ -19,7 +19,7 @@ var (
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "serial",
+		Use:   "depthmeter",
 		Short: "Режим чтения данных с последовательного порта",
 		RunE:  Handler,
 	}
@@ -34,14 +34,16 @@ func Handler(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("cannot init depth meter port '%s': %v", srcCfg.Port, err)
 	}
-
 	defer srcPort.Close()
 
-	dstPort, err := serial_port.New(dstCfg)
-	if err != nil {
-		return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
-	}
+	var dstPort *serial_port.SerialPort
 
+	if !dstCfg.TransmittingDisabled {
+		dstPort, err = serial_port.New(dstCfg)
+		if err != nil {
+			return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
+		}
+	}
 	defer dstPort.Close()
 
 	dm := depthmeter.New(srcPort)
@@ -62,12 +64,16 @@ func Handler(_ *cobra.Command, _ []string) error {
 			continue
 		}
 
+		log.Printf("%+v", measure)
+
+		if dstCfg.TransmittingDisabled {
+			continue
+		}
+
 		_, err = dstPort.Write(b)
 		if err != nil {
 			log.Errorf("cannot write measures: %v", err)
 			continue
 		}
-
-		log.Println(measure.SystemTime, measure.Distance, measure.Strength, measure.Precision)
 	}
 }
