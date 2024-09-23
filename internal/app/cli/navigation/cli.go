@@ -30,7 +30,7 @@ func Cmd() *cobra.Command {
 		Short: "блок навигации",
 		RunE:  Handler,
 	}
-	srcCfg = common.AddSerialSourceFlags(&cmd, "")
+	srcCfg = common.AddSerialSourceFlags(&cmd)
 
 	cmd.Flags().StringVar(
 		&mode, "mode",
@@ -65,7 +65,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 	packer := proto.Packer{}
 
 	for {
-		rawData, err := proto.Read(port, 1<<10)
+		rawData, err := proto.Read(port)
 		if err != nil {
 			log.Errorf("read data from source port failed: %v", err)
 		}
@@ -75,6 +75,6 @@ func Handler(_ *cobra.Command, _ []string) error {
 			log.Errorf("unpack failed: %v", err)
 		}
 
-		log.Printf("received measures: %#v", data)
+		log.Printf("received: %+v", data)
 	}
 }

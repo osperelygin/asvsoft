@@ -18,7 +18,7 @@ func TestRead(t *testing.T) {
 		rawData = append(rawData, noiseBytes...)
 		rawData = append(rawData, packedData...)
 
-		b, err := Read(bytes.NewReader(rawData), 1<<10)
+		b, err := Read(bytes.NewReader(rawData))
 		assert.NoError(t, err)
 		assert.Equal(t, packedData, b)
 	})
@@ -26,7 +26,7 @@ func TestRead(t *testing.T) {
 	t.Run("отсутствие фрейма в потоке байтов", func(t *testing.T) {
 		emptyFlow := make([]byte, 1<<11)
 
-		b, err := Read(bytes.NewReader(emptyFlow), 1<<10)
+		b, err := Read(bytes.NewReader(emptyFlow))
 		assert.Nil(t, b)
 		assert.Error(t, err)
 	})
@@ -44,7 +44,7 @@ func BenchmarkRead(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := Read(bytes.NewReader(rawData), 1<<10)
+		_, err := Read(bytes.NewReader(rawData))
 		if err != nil {
 			b.Fatalf("Read return error: %v", err)
 		}

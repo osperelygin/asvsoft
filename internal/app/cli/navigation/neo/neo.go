@@ -25,7 +25,7 @@ func Cmd() *cobra.Command {
 		RunE:  Handler,
 	}
 	dstCfg = common.AddSerialDestinationFlags(cmd)
-	srcCfg = common.AddSerialSourceFlags(cmd, "")
+	srcCfg = common.AddSerialSourceFlags(cmd)
 
 	cmd.Flags().IntVar(
 		&neoConfig.Rate, "rate",

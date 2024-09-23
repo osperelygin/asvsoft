@@ -12,6 +12,10 @@ import (
 	"github.com/howeyc/crc16"
 )
 
+const (
+	DefaultReadRetries = 1 << 10
+)
+
 type Addr uint8
 
 const (
@@ -178,7 +182,12 @@ func buffFromPool(size int) []byte {
 
 // Read ищет в потоке принимаемых байтов синхронизовачный заголовок
 // и затем вычитает фрейм протокола. Возвращает полученный фрейм и ошибку.
-func Read(r io.Reader, limit int) ([]byte, error) {
+func Read(r io.Reader) ([]byte, error) {
+	return ReadWithLimit(r, DefaultReadRetries)
+}
+
+// ReadWithLimit аналогично Read, но с возможностью указать лимит не по умолчанию.
+func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 	rawData := []byte{}
 
 	_, err := r.Read(headerBuff)
@@ -186,7 +195,7 @@ func Read(r io.Reader, limit int) ([]byte, error) {
 		return nil, fmt.Errorf("proto.Read failed: %w", err)
 	}
 
-	for ; len(rawData) == 0 && limit > 0; limit-- {
+	for retries := limit; len(rawData) == 0 && retries > 0; retries-- {
 		if !isEqual(syncFramePart, headerBuff) {
 			headerBuff[0] = headerBuff[1]
 			headerBuff[1] = headerBuff[2]

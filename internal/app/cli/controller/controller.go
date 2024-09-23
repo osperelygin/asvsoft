@@ -5,9 +5,11 @@ import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/pkg/proto"
 	"asvsoft/internal/pkg/serial_port"
+	"errors"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+	"go.bug.st/serial"
 
 	"github.com/spf13/cobra"
 )
@@ -22,7 +24,7 @@ func Cmd() *cobra.Command {
 		Short: "Режим чтения данных с последовательного порта",
 		RunE:  Handler,
 	}
-	depthMeterConfig = common.AddSerialSourceFlags(cmd, "depth-meter")
+	depthMeterConfig = common.AddSerialSourceFlagsWithPrefix(cmd, "depth-meter")
 
 	return cmd
 }
@@ -32,28 +34,36 @@ func Handler(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("cannot open serial port '%s': %v", depthMeterConfig.Port, err)
 	}
-
 	defer srcPort.Close()
 
-	packer := proto.Packer{}
+	packer := proto.NewPacker()
 
 	for {
-		rawData, err := proto.Read(srcPort, 1<<10)
+		rawData, err := proto.Read(srcPort)
 		if err != nil {
 			log.Errorf("read failed: %v", err)
+
+			if pErr := new(serial.PortError); errors.As(err, &pErr) && pErr.Code() == serial.PortClosed {
+				srcPort, err = serial_port.New(srcPort.Cfg)
+				if err != nil {
+					return fmt.Errorf("port closed and failed to reopen: %w", err)
+				}
+
+				log.Warn("port successfully reopened")
+
+				continue
+			}
+
+			continue
 		}
 
 		data, err := packer.Unpack(rawData)
 		if err != nil {
 			log.Errorf("unpack failed: %v", err)
+			continue
 		}
 
-		measures, ok := data.(*proto.DepthMeterData)
-		if !ok {
-			log.Errorf("cast data to *proto.DepthMeterData failed: %v", err)
-		}
-
-		log.Printf("received measures: %v", measures)
+		log.Printf("received: %+v", data)
 	}
 }
 

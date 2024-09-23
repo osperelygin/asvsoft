@@ -2,7 +2,7 @@
 package main
 
 import (
-	"asvsoft/internal/app/cli"
+	"asvsoft/internal/app"
 	"os"
 )
 
@@ -17,7 +17,11 @@ var (
 )
 
 func main() {
-	err := cli.RootCmd().Execute()
+	err := app.Init(app.Config{
+		BuildTime:   BuildTime,
+		BuildCommit: BuildCommit,
+		BuildBranch: BuildBranch,
+	})
 	if err != nil {
 		os.Exit(1)
 	}

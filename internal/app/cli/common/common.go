@@ -41,7 +41,12 @@ func AddSerialDestinationFlags(cmd *cobra.Command) *serial_port.SerialPortConfig
 // AddSerialSourceFlags добавляем команде флаги последовательного конфигурации
 // последовательного интерфейса источника и возвращает его конфиг. По умолчанию используется порт
 // /dev/ttyAMA0 со скоростью 4800 bit/sec и таймаутом 5 секунд .
-func AddSerialSourceFlags(cmd *cobra.Command, prefix string) *serial_port.SerialPortConfig {
+func AddSerialSourceFlags(cmd *cobra.Command) *serial_port.SerialPortConfig {
+	return AddSerialSourceFlagsWithPrefix(cmd, "")
+}
+
+// AddSerialSourceFlagsWithPrefix аналогично AddSerialSourceFlags, но с воможностью добавить флагам префикс.
+func AddSerialSourceFlagsWithPrefix(cmd *cobra.Command, prefix string) *serial_port.SerialPortConfig {
 	var config serial_port.SerialPortConfig
 
 	cmd.Flags().StringVar(

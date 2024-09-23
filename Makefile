@@ -6,7 +6,7 @@ GOOS ?= linux
 # Дефолтная архитектура
 GOARCH ?= arm
 # Время сборки
-BUILD_DATE = $(shell TZ=UTC-3 date +%Y-%m-%dT%H:%M)
+BUILD_DATE = $(shell TZ=UTC-3 date +%Y-%m-%dT%H:%M:%S)
 # Ветка
 BRANCH := $(shell git symbolic-ref -q --short HEAD)
 # 8 символов последнего коммита
@@ -56,4 +56,10 @@ asvsoft:
 .PHONY: deploy-%
 deploy-%: build
 	scp $(PWD)/bin/$(SERVICE_NAME) $*:/usr/local/bin/
+	@echo "deploy successfully"
+
+# Деплой сервиса на плату
+.PHONY: deploy
+deploy: build
+	sed -n 's/^Host //p' ~/.ssh/config.d/raspi | while read SSH_HOST; do scp $(PWD)/bin/$(SERVICE_NAME) $$SSH_HOST:/usr/local/bin/; done
 	@echo "deploy successfully"

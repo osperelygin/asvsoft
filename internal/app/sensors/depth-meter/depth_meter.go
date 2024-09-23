@@ -34,7 +34,7 @@ func New(r io.Reader) *DepthMeter {
 func (dm *DepthMeter) ReadMeasure() (*proto.DepthMeterData, error) {
 	_, err := dm.r.Read(rawData)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read bytes from port: %v", err)
+		return nil, fmt.Errorf("cannot read bytes from port: %w", err)
 	}
 
 	start := bytes.Index(rawData, frameHeader)
@@ -64,12 +64,12 @@ func (dm *DepthMeter) ReadMeasure() (*proto.DepthMeterData, error) {
 
 	_, err = d.Discard(frameHeaderSize)
 	if err != nil {
-		return nil, fmt.Errorf("cannot discard frame header: %v", err)
+		return nil, fmt.Errorf("cannot discard frame header: %w", err)
 	}
 
 	err = d.Decode(&measure.ID, &measure.SystemTime, &measure.Distance, &measure.Status, &measure.Strength, &measure.Precision)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode measure: %v", err)
+		return nil, fmt.Errorf("cannot decode measure: %w", err)
 	}
 
 	d.Close()
