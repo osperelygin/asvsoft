@@ -2,23 +2,28 @@
 package depthmeter
 
 import (
+	"asvsoft/internal/app/ds"
 	"asvsoft/internal/pkg/encoder"
+	"asvsoft/internal/pkg/measurer"
 	"asvsoft/internal/pkg/proto"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
-	frameHeaderSize = 3
-	totalFrameSize  = 16
+	headerSize = 3
+	frameSize  = 16
 )
 
 var (
 	// frameHeader последовательность байт протокола для синхронизации
 	frameHeader = []byte{0x57, 0x00, 0xff}
 	// rawData преаллоцированный массив байт для чтения данных протокола
-	rawData = make([]byte, 2*totalFrameSize)
+	rawData = make([]byte, 2*frameSize)
 )
 
 type DepthMeter struct {
@@ -31,7 +36,11 @@ func New(r io.Reader) *DepthMeter {
 	}
 }
 
-func (dm *DepthMeter) ReadMeasure() (*proto.DepthMeterData, error) {
+func (dm *DepthMeter) Measure(_ context.Context) measurer.Measurement {
+	return ds.NewMeasurement(dm.read())
+}
+
+func (dm *DepthMeter) read() (*proto.DepthMeterData, error) {
 	_, err := dm.r.Read(rawData)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read bytes from port: %w", err)
@@ -42,37 +51,43 @@ func (dm *DepthMeter) ReadMeasure() (*proto.DepthMeterData, error) {
 		return nil, fmt.Errorf("cannot find frame header: %v", rawData)
 	}
 
-	if start+totalFrameSize > 2*totalFrameSize {
+	if start+frameSize > 2*frameSize {
 		return nil, fmt.Errorf("cannot parse binary data: %v", rawData)
 	}
 
+	frame := rawData[start : start+frameSize]
+
+	log.Debugf("read frame: %v", frame)
+
 	sum := 0
-	payload := rawData[start : start+totalFrameSize]
-
-	// log.Println(payload)
-
-	for idx := 0; idx < totalFrameSize-1; idx++ {
-		sum += int(payload[idx])
+	for idx := 0; idx < frameSize-1; idx++ {
+		sum += int(frame[idx])
 	}
 
-	if sum%256 != int(payload[totalFrameSize-1]) {
+	if sum%256 != int(frame[frameSize-1]) {
 		return nil, fmt.Errorf("check sum missmatch")
 	}
 
-	measure := proto.DepthMeterData{}
-	d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(payload)))
+	d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(frame)))
 
-	_, err = d.Discard(frameHeaderSize)
+	defer func() {
+		err = d.Close()
+		if err != nil {
+			log.Errorf("cannot close decoder: %v", err)
+		}
+	}()
+
+	_, err = d.Discard(headerSize)
 	if err != nil {
 		return nil, fmt.Errorf("cannot discard frame header: %w", err)
 	}
+
+	var measure proto.DepthMeterData
 
 	err = d.Decode(&measure.ID, &measure.SystemTime, &measure.Distance, &measure.Status, &measure.Strength, &measure.Precision)
 	if err != nil {
 		return nil, fmt.Errorf("cannot decode measure: %w", err)
 	}
-
-	d.Close()
 
 	return &measure, nil
 }

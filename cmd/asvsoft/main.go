@@ -3,6 +3,7 @@ package main
 
 import (
 	"asvsoft/internal/app"
+	"asvsoft/internal/app/ds"
 	"os"
 )
 
@@ -17,7 +18,7 @@ var (
 )
 
 func main() {
-	err := app.Init(app.Config{
+	err := app.Init(&ds.AppInfo{
 		BuildTime:   BuildTime,
 		BuildCommit: BuildCommit,
 		BuildBranch: BuildBranch,

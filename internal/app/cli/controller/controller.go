@@ -4,7 +4,7 @@ package controller
 import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/pkg/proto"
-	"asvsoft/internal/pkg/serial_port"
+	serialport "asvsoft/internal/pkg/serial-port"
 	"errors"
 	"fmt"
 
@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	depthMeterConfig *serial_port.SerialPortConfig
+	depthMeterConfig *serialport.Config
 )
 
 func Cmd() *cobra.Command {
@@ -30,7 +30,7 @@ func Cmd() *cobra.Command {
 }
 
 func Handler(_ *cobra.Command, _ []string) error {
-	srcPort, err := serial_port.New(depthMeterConfig)
+	srcPort, err := serialport.New(depthMeterConfig)
 	if err != nil {
 		return fmt.Errorf("cannot open serial port '%s': %v", depthMeterConfig.Port, err)
 	}
@@ -44,7 +44,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 			log.Errorf("read failed: %v", err)
 
 			if pErr := new(serial.PortError); errors.As(err, &pErr) && pErr.Code() == serial.PortClosed {
-				srcPort, err = serial_port.New(srcPort.Cfg)
+				srcPort, err = serialport.New(srcPort.Cfg)
 				if err != nil {
 					return fmt.Errorf("port closed and failed to reopen: %w", err)
 				}

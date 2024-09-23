@@ -5,7 +5,7 @@ import (
 	"asvsoft/internal/app/cli/common"
 	sensehat "asvsoft/internal/app/sensors/sense-hat"
 	"asvsoft/internal/pkg/proto"
-	"asvsoft/internal/pkg/serial_port"
+	serialport "asvsoft/internal/pkg/serial-port"
 	"fmt"
 	"time"
 
@@ -15,7 +15,7 @@ import (
 
 var (
 	period time.Duration
-	dstCfg *serial_port.SerialPortConfig
+	dstCfg *serialport.Config
 	imuCfg *sensehat.ImuConfig
 )
 
@@ -81,10 +81,10 @@ func Handler(_ *cobra.Command, _ []string) error {
 		}
 	}()
 
-	var dstPort *serial_port.SerialPort
+	var dstPort *serialport.Wrapper
 
 	if !dstCfg.TransmittingDisabled {
-		dstPort, err = serial_port.New(dstCfg)
+		dstPort, err = serialport.New(dstCfg)
 		if err != nil {
 			return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
 		}

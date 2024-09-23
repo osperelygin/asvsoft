@@ -3,21 +3,14 @@ package depthmeter
 
 import (
 	"asvsoft/internal/app/cli/common"
-	depthmeter "asvsoft/internal/app/sensors/depth-meter"
-	"asvsoft/internal/pkg/proto"
-	"asvsoft/internal/pkg/serial_port"
-	"errors"
-	"fmt"
-	"time"
+	"asvsoft/internal/app/config"
+	"asvsoft/internal/pkg/measurer"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"go.bug.st/serial"
 )
 
 var (
-	dstCfg *serial_port.SerialPortConfig
-	srcCfg *serial_port.SerialPortConfig
+	cfg config.Config
 )
 
 func Cmd() *cobra.Command {
@@ -26,76 +19,24 @@ func Cmd() *cobra.Command {
 		Short: "Режим чтения данных с последовательного порта",
 		RunE:  Handler,
 	}
-	dstCfg = common.AddSerialDestinationFlags(cmd)
-	srcCfg = common.AddSerialSourceFlags(cmd)
+	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)
+	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
 
 	return cmd
 }
 
-func Handler(_ *cobra.Command, _ []string) error {
-	srcPort, err := serial_port.New(srcCfg)
+func Handler(cmd *cobra.Command, args []string) error { // nolint: revive
+	ctx := config.WrapContext(cmd.Context(), &cfg)
+
+	m, t, err := common.Init(ctx, common.DepthMeterMode)
 	if err != nil {
-		return fmt.Errorf("cannot init depth meter port '%s': %v", srcCfg.Port, err)
+		return err
 	}
-	defer srcPort.Close()
 
-	var dstPort *serial_port.SerialPort
-
-	if !dstCfg.TransmittingDisabled {
-		dstPort, err = serial_port.New(dstCfg)
-		if err != nil {
-			return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
-		}
+	err = measurer.Run(ctx, m, t)
+	if err != nil {
+		return err
 	}
-	defer dstPort.Close()
 
-	dm := depthmeter.New(srcPort)
-	packer := proto.NewPacker()
-
-	for {
-		// TODO: убрать ResetInputBuffer и time.Sleep
-		err = srcPort.ResetInputBuffer()
-		if err != nil {
-			log.Warnf("port: reset input buffer failed: %v", err)
-		}
-
-		time.Sleep(50 * time.Millisecond)
-
-		measure, err := dm.ReadMeasure()
-		if err != nil {
-			log.Errorf("cannot read measure: %v", err)
-
-			if pErr := new(serial.PortError); errors.As(err, &pErr) && pErr.Code() == serial.PortClosed {
-				srcPort, err = serial_port.New(srcPort.Cfg)
-				if err != nil {
-					return fmt.Errorf("port closed and failed to reopen: %w", err)
-				}
-
-				dm = depthmeter.New(srcPort)
-
-				log.Warn("port successfully reopened")
-
-				continue
-			}
-
-			continue
-		}
-
-		b, err := packer.Pack(measure, proto.DepthMeterModuleAddr, proto.WritingModeA)
-		if err != nil {
-			log.Errorf("cannot pack measure: %v", err)
-			continue
-		}
-
-		log.Printf("transmitted: %#v", measure)
-
-		if dstCfg.TransmittingDisabled {
-			continue
-		}
-
-		_, err = dstPort.Write(b)
-		if err != nil {
-			log.Errorf("cannot write measures: %v", err)
-		}
-	}
+	return nil
 }

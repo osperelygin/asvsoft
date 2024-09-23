@@ -6,7 +6,7 @@ import (
 	"asvsoft/internal/app/cli/navigation/neo"
 	sensehat "asvsoft/internal/app/cli/navigation/sense-hat"
 	"asvsoft/internal/pkg/proto"
-	"asvsoft/internal/pkg/serial_port"
+	serialport "asvsoft/internal/pkg/serial-port"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -21,7 +21,7 @@ const (
 
 var (
 	mode   string
-	srcCfg *serial_port.SerialPortConfig
+	srcCfg *serialport.Config
 )
 
 func Cmd() *cobra.Command {
@@ -52,7 +52,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 
 	switch mode {
 	case gnssMode, imuMode:
-		port, err = serial_port.New(srcCfg)
+		port, err = serialport.New(srcCfg)
 		if err != nil {
 			return fmt.Errorf("cannot init gnss port: %v", err)
 		}

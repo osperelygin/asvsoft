@@ -12,48 +12,6 @@ import (
 	"github.com/howeyc/crc16"
 )
 
-const (
-	DefaultReadRetries = 1 << 10
-)
-
-type Addr uint8
-
-const (
-	ControlModuleAddr Addr = iota * 0x10
-	DepthMeterModuleAddr
-	LidarModuleAddr
-	CommunicationModuleAddr
-	NavigationModuleAddr
-	GNSSModuleAddr
-	IMUModuleAddr
-)
-
-type MessageID uint8
-
-const (
-	ReadingModeA MessageID = iota
-	ReadingModeB
-	ReadingModeC
-	WritingModeA
-	WritingModeB
-	WritingModeC
-)
-
-type Bitmask uint8
-
-const (
-	ModuleAddrBitmask Bitmask = 0xF0
-	MessageIDBitmask  Bitmask = 0x0F
-)
-
-const (
-	checkSumSize         = 2
-	syncFramePartSize    = 3
-	serviceFramePartSize = 11
-)
-
-var syncFramePart = []byte{0x57, 0x10, 0xFF}
-
 type Packer struct{}
 
 func NewPacker() *Packer {

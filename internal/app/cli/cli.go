@@ -6,6 +6,7 @@ import (
 	"asvsoft/internal/app/cli/controller"
 	depthmeter "asvsoft/internal/app/cli/depth-meter"
 	"asvsoft/internal/app/cli/navigation"
+	"asvsoft/internal/app/ctxutils"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -33,7 +34,7 @@ func RootCmd() *cobra.Command {
 	return &rootCmd
 }
 
-func persistentPreRunHandler(_ *cobra.Command, _ []string) error {
+func persistentPreRunHandler(cmd *cobra.Command, args []string) error { // nolint: revive
 	lvl, err := log.ParseLevel(common.LogLevel)
 	if err != nil {
 		return err
@@ -45,6 +46,12 @@ func persistentPreRunHandler(_ *cobra.Command, _ []string) error {
 		TimestampFormat: "Jan _2 15:04:05.000",
 		FullTimestamp:   true,
 	})
+
+	appinfo := ctxutils.GetAppInfo(cmd.Context())
+	log.Infof(
+		"BuildTime: %s, BuildCommit: %s, BuildBranch: %s",
+		appinfo.BuildTime, appinfo.BuildCommit, appinfo.BuildBranch,
+	)
 
 	return nil
 }

@@ -3,7 +3,7 @@ package neom8t
 
 import (
 	"asvsoft/internal/pkg/proto"
-	"asvsoft/internal/pkg/serial_port"
+	serialport "asvsoft/internal/pkg/serial-port"
 	"context"
 	"errors"
 	"fmt"
@@ -27,12 +27,12 @@ type Config struct {
 }
 
 type NeoM8t struct {
-	port *serial_port.SerialPort
+	port *serialport.Wrapper
 	cfg  *Config
 	d    *ublox.Decoder
 }
 
-func New(cfg *Config, port *serial_port.SerialPort) (*NeoM8t, error) {
+func New(cfg *Config, port *serialport.Wrapper) (*NeoM8t, error) {
 	n := &NeoM8t{
 		cfg:  cfg,
 		port: port,
@@ -103,7 +103,7 @@ func (n *NeoM8t) Measure() (*proto.GNSSData, error) {
 				portError := &serial.PortError{}
 				if errors.As(err, &portError) && portError.Code() == serial.PortClosed {
 					// Пересоздаем порт
-					port, err := serial_port.New(n.port.Cfg)
+					port, err := serialport.New(n.port.Cfg)
 					if err != nil {
 						return nil, fmt.Errorf("port closed and failed to reopen: %w", err)
 					}

@@ -3,28 +3,17 @@ package app
 
 import (
 	"asvsoft/internal/app/cli"
-
-	log "github.com/sirupsen/logrus"
+	"asvsoft/internal/app/ctxutils"
+	"asvsoft/internal/app/ds"
+	"context"
 )
 
-type Config struct {
-	// BuildTime   - Время сборки
-	BuildTime string
-	// BuildCommit -  Коммит из которого был билд
-	BuildCommit string
-	// BuildBranch -  Ветка из которой был билд
-	BuildBranch string
-}
+func Init(appinfo *ds.AppInfo) error {
+	ctx := ctxutils.InitStorage(context.Background())
+	ctxutils.SaveAppInfo(ctx, appinfo)
 
-func Init(cfg Config) error {
-	log.Infof(
-		"BuildTime: %s, BuildCommit: %s, BuildBranch: %s",
-		cfg.BuildTime, cfg.BuildCommit, cfg.BuildBranch,
-	)
-
-	err := cli.RootCmd().Execute()
+	err := cli.RootCmd().ExecuteContext(ctx)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 

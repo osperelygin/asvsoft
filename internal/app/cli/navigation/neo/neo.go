@@ -5,7 +5,7 @@ import (
 	"asvsoft/internal/app/cli/common"
 	neom8t "asvsoft/internal/app/sensors/neo-m8t"
 	"asvsoft/internal/pkg/proto"
-	"asvsoft/internal/pkg/serial_port"
+	serialport "asvsoft/internal/pkg/serial-port"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	dstCfg    *serial_port.SerialPortConfig
-	srcCfg    *serial_port.SerialPortConfig
+	dstCfg    *serialport.Config
+	srcCfg    *serialport.Config
 	neoConfig neom8t.Config
 )
 
@@ -36,16 +36,16 @@ func Cmd() *cobra.Command {
 }
 
 func Handler(_ *cobra.Command, _ []string) error {
-	srcPort, err := serial_port.New(srcCfg)
+	srcPort, err := serialport.New(srcCfg)
 	if err != nil {
 		return fmt.Errorf("cannot open serial port '%s': %v", srcCfg.Port, err)
 	}
 	defer srcPort.Close()
 
-	var dstPort *serial_port.SerialPort
+	var dstPort *serialport.Wrapper
 
 	if !dstCfg.TransmittingDisabled {
-		dstPort, err = serial_port.New(dstCfg)
+		dstPort, err = serialport.New(dstCfg)
 		if err != nil {
 			return fmt.Errorf("cannot open serial port '%s': %v", dstCfg.Port, err)
 		}
