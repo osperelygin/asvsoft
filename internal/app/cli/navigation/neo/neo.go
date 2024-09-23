@@ -66,7 +66,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 			continue
 		}
 
-		log.Printf("read the message: %#v", measure)
+		log.Printf("transmitted: %#v", measure)
 
 		b, err := packer.Pack(measure, proto.GNSSModuleAddr, proto.WritingModeA)
 		if err != nil {

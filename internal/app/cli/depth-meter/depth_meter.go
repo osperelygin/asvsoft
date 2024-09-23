@@ -87,7 +87,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 			continue
 		}
 
-		log.Printf("transmitted: %+v", measure)
+		log.Printf("transmitted: %#v", measure)
 
 		if dstCfg.TransmittingDisabled {
 			continue

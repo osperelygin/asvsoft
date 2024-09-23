@@ -101,7 +101,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 			continue
 		}
 
-		log.Infof("decode measure: %#v", measure)
+		log.Infof("transmitted: %#v", measure)
 
 		b, err := packer.Pack(measure, proto.IMUModuleAddr, proto.WritingModeA)
 		if err != nil {
