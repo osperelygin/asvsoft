@@ -16,7 +16,7 @@ type Transmitter interface {
 	Transmit(ctx context.Context, data any) error
 }
 
-func New(addr proto.Addr, mode proto.MessageID) *CommonTransmitter {
+func NewCommonTransmitter(addr proto.Addr, mode proto.MessageID) *CommonTransmitter {
 	return &CommonTransmitter{
 		addr: addr,
 		mode: mode,

@@ -5,6 +5,7 @@ import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/app/cli/controller"
 	depthmeter "asvsoft/internal/app/cli/depth-meter"
+	"asvsoft/internal/app/cli/lidar"
 	"asvsoft/internal/app/cli/navigation"
 	"asvsoft/internal/app/ctxutils"
 	"os"
@@ -29,6 +30,7 @@ func RootCmd() *cobra.Command {
 		controller.Cmd(),
 		depthmeter.Cmd(),
 		navigation.Cmd(),
+		lidar.Cmd(),
 	)
 
 	return &rootCmd

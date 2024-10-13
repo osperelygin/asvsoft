@@ -5,11 +5,9 @@ import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/pkg/proto"
 	serialport "asvsoft/internal/pkg/serial-port"
-	"errors"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-	"go.bug.st/serial"
 
 	"github.com/spf13/cobra"
 )
@@ -32,7 +30,7 @@ func Cmd() *cobra.Command {
 func Handler(_ *cobra.Command, _ []string) error {
 	srcPort, err := serialport.New(depthMeterConfig)
 	if err != nil {
-		return fmt.Errorf("cannot open serial port '%s': %v", depthMeterConfig.Port, err)
+		return fmt.Errorf("cannot open serial port %q: %v", depthMeterConfig.Port, err)
 	}
 	defer srcPort.Close()
 
@@ -40,18 +38,6 @@ func Handler(_ *cobra.Command, _ []string) error {
 		rawData, err := proto.Read(srcPort)
 		if err != nil {
 			log.Errorf("read failed: %v", err)
-
-			if pErr := new(serial.PortError); errors.As(err, &pErr) && pErr.Code() == serial.PortClosed {
-				srcPort, err = serialport.New(srcPort.Cfg)
-				if err != nil {
-					return fmt.Errorf("port closed and failed to reopen: %w", err)
-				}
-
-				log.Warn("port successfully reopened")
-
-				continue
-			}
-
 			continue
 		}
 

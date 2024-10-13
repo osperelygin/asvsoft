@@ -5,7 +5,6 @@ import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/app/config"
 	sensehat "asvsoft/internal/app/sensors/sense-hat"
-	"asvsoft/internal/pkg/measurer"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -19,7 +18,9 @@ func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sense-hat",
 		Short: "Обработка и передача данных SENSE HAT (C)",
-		RunE:  Handler,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return common.Handler(cmd, args, &cfg, common.ImuMode)
+		},
 	}
 
 	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
@@ -62,20 +63,4 @@ func Cmd() *cobra.Command {
 	)
 
 	return cmd
-}
-
-func Handler(cmd *cobra.Command, _ []string) error {
-	ctx := config.WrapContext(cmd.Context(), &cfg)
-
-	m, t, err := common.Init(ctx, common.ImuMode)
-	if err != nil {
-		return err
-	}
-
-	err = measurer.Run(ctx, m, t)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -3,6 +3,7 @@ package common
 import (
 	"asvsoft/internal/app/config"
 	depthmeter "asvsoft/internal/app/sensors/depth-meter"
+	"asvsoft/internal/app/sensors/lidar"
 	neom8t "asvsoft/internal/app/sensors/neo-m8t"
 	sensehat "asvsoft/internal/app/sensors/sense-hat"
 	"asvsoft/internal/pkg/measurer"
@@ -10,6 +11,7 @@ import (
 	serialport "asvsoft/internal/pkg/serial-port"
 	"asvsoft/internal/pkg/transmitter"
 	"context"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -18,15 +20,19 @@ type RunMode int
 
 const (
 	DepthMeterMode RunMode = iota
+	LidarMode
 	NeoM8tMode
 	ImuMode
 	NavMode
 )
 
-func Init(ctx context.Context, mode RunMode) (m measurer.Measurer, t transmitter.Transmitter, err error) {
+func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Transmitter, error) {
 	cfg := config.FromContext(ctx)
 
-	var srcPort *serialport.Wrapper
+	var (
+		srcPort *serialport.Wrapper
+		err     error
+	)
 
 	if mode != ImuMode {
 		srcPort, err = serialport.New(cfg.SrcSerialPort)
@@ -37,52 +43,49 @@ func Init(ctx context.Context, mode RunMode) (m measurer.Measurer, t transmitter
 		srcPort.SetLogger(log.StandardLogger())
 	}
 
-	var dstPort *serialport.Wrapper
-
-	if !cfg.DstSerialPort.TransmittingDisabled {
-		dstPort, err = serialport.New(cfg.DstSerialPort)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		dstPort.SetLogger(log.StandardLogger())
-	}
-
-	var ct *transmitter.CommonTransmitter
+	var (
+		m    measurer.Measurer
+		addr proto.Addr
+	)
 
 	switch mode {
 	case DepthMeterMode:
 		m = depthmeter.New(srcPort)
-
-		ct = transmitter.New(proto.DepthMeterModuleAddr, proto.WritingModeA)
-		if !cfg.DstSerialPort.TransmittingDisabled {
-			ct.SetWritter(dstPort)
-		}
+		addr = proto.DepthMeterModuleAddr
+	case LidarMode:
+		m = lidar.New(srcPort)
+		addr = proto.LidarModuleAddr
 	case NeoM8tMode:
 		m, err = neom8t.New(cfg.NeoM8t, srcPort)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		ct = transmitter.New(proto.GNSSModuleAddr, proto.WritingModeA)
-		if !cfg.DstSerialPort.TransmittingDisabled {
-			ct.SetWritter(dstPort)
-		}
+		addr = proto.GNSSModuleAddr
 	case ImuMode:
 		m, err = sensehat.NewIMU(cfg.Imu)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		ct = transmitter.New(proto.IMUModuleAddr, proto.WritingModeA)
-		if !cfg.DstSerialPort.TransmittingDisabled {
-			ct.SetWritter(dstPort)
-		}
+		addr = proto.IMUModuleAddr
 	case NavMode:
 		panic("implement me")
+	default:
+		panic(fmt.Sprintf("unknown run mode: %q", addr))
 	}
 
-	t = ct
+	t := transmitter.NewCommonTransmitter(addr, proto.WritingModeA)
+
+	if !cfg.DstSerialPort.TransmittingDisabled {
+		dstPort, err := serialport.New(cfg.DstSerialPort)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		dstPort.SetLogger(log.StandardLogger())
+		t.SetWritter(dstPort)
+	}
 
 	return m, t, nil
 }
