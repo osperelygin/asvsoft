@@ -24,6 +24,8 @@ func Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
 	switch addr {
 	case DepthMeterModuleAddr:
 		payload, err = packDepthMeterData(data.(*DepthMeterData), msgID)
+	case LidarModuleAddr:
+		payload, err = packLidarData(data.(*LidarData), msgID)
 	case IMUModuleAddr:
 		payload, err = packIMUData(data.(*IMUData), msgID)
 	case GNSSModuleAddr:
@@ -99,6 +101,8 @@ func Unpack(data []byte) (out any, err error) {
 	switch addr {
 	case DepthMeterModuleAddr:
 		out, err = unpackDepthMeterData(payload, msgID)
+	case LidarModuleAddr:
+		out, err = unpackLidarData(payload, msgID)
 	case IMUModuleAddr:
 		out, err = unpackIMUData(payload, msgID)
 	case GNSSModuleAddr:
