@@ -30,6 +30,8 @@ func Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
 		payload, err = packIMUData(data.(*IMUData), msgID)
 	case GNSSModuleAddr:
 		payload, err = packGNSSData(data.(*GNSSData), msgID)
+	case CheckModuleAddr:
+		payload, err = packCheckData(data.(*CheckData), msgID)
 	default:
 		panic(fmt.Sprintf("Pack is not implemented for this addr (%x)", addr))
 	}
@@ -107,6 +109,8 @@ func Unpack(data []byte) (out any, err error) {
 		out, err = unpackIMUData(payload, msgID)
 	case GNSSModuleAddr:
 		out, err = unpackGNSSData(payload, msgID)
+	case CheckModuleAddr:
+		out, err = unpackCheckData(payload, msgID)
 	default:
 		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", addr))
 	}

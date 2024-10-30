@@ -2,6 +2,7 @@ package common
 
 import (
 	"asvsoft/internal/app/config"
+	"asvsoft/internal/app/sensors/check"
 	depthmeter "asvsoft/internal/app/sensors/depth-meter"
 	"asvsoft/internal/app/sensors/lidar"
 	neom8t "asvsoft/internal/app/sensors/neo-m8t"
@@ -24,6 +25,7 @@ const (
 	NeoM8tMode
 	ImuMode
 	NavMode
+	CheckMode
 )
 
 func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Transmitter, error) {
@@ -34,13 +36,18 @@ func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Tra
 		err     error
 	)
 
-	if mode != ImuMode {
+	if mode != ImuMode && mode != CheckMode {
 		srcPort, err = serialport.New(cfg.SrcSerialPort)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		srcPort.SetLogger(log.StandardLogger())
+
+		err = srcPort.ResetInputBuffer()
+		if err != nil {
+			log.Errorf("cannot reset input buffer: %v", err)
+		}
 	}
 
 	var (
@@ -71,6 +78,9 @@ func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Tra
 		addr = proto.IMUModuleAddr
 	case NavMode:
 		panic("implement me")
+	case CheckMode:
+		addr = proto.CheckModuleAddr
+		m = check.New()
 	default:
 		panic(fmt.Sprintf("unknown run mode: %q", addr))
 	}
@@ -81,6 +91,11 @@ func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Tra
 		dstPort, err := serialport.New(cfg.DstSerialPort)
 		if err != nil {
 			return nil, nil, err
+		}
+
+		err = dstPort.ResetOutputBuffer()
+		if err != nil {
+			log.Errorf("cannot reset output buffer: %v", err)
 		}
 
 		dstPort.SetLogger(log.StandardLogger())

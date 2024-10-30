@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"asvsoft/internal/app/cli/check"
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/app/cli/controller"
 	depthmeter "asvsoft/internal/app/cli/depth-meter"
@@ -31,6 +32,7 @@ func RootCmd() *cobra.Command {
 		depthmeter.Cmd(),
 		navigation.Cmd(),
 		lidar.Cmd(),
+		check.Cmd(),
 	)
 
 	return &rootCmd

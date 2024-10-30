@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	depthMeterConfig *serialport.Config
+	controllerConfig *serialport.Config
 )
 
 func Cmd() *cobra.Command {
@@ -22,15 +22,15 @@ func Cmd() *cobra.Command {
 		Short: "Режим чтения данных с последовательного порта",
 		RunE:  Handler,
 	}
-	depthMeterConfig = common.AddSerialSourceFlagsWithPrefix(cmd, "depth-meter")
+	controllerConfig = common.AddSerialSourceFlags(cmd)
 
 	return cmd
 }
 
 func Handler(_ *cobra.Command, _ []string) error {
-	srcPort, err := serialport.New(depthMeterConfig)
+	srcPort, err := serialport.New(controllerConfig)
 	if err != nil {
-		return fmt.Errorf("cannot open serial port %q: %v", depthMeterConfig.Port, err)
+		return fmt.Errorf("cannot open serial port %q: %v", controllerConfig.Port, err)
 	}
 	defer srcPort.Close()
 

@@ -10,6 +10,7 @@ const (
 	NavigationModuleAddr
 	GNSSModuleAddr
 	IMUModuleAddr
+	CheckModuleAddr
 )
 
 type MessageID uint8
