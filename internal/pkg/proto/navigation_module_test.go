@@ -15,7 +15,7 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		packedData, err := Pack(data, IMUModuleAddr, WritingModeA)
+		packedData, err := Pack(data, IMUModuleID, WritingModeA)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)
@@ -24,7 +24,7 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		packedData, err := Pack(data, IMUModuleAddr, WritingModeB)
+		packedData, err := Pack(data, IMUModuleID, WritingModeB)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)
@@ -36,7 +36,7 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		packedData, err := Pack(data, IMUModuleAddr, WritingModeC)
+		packedData, err := Pack(data, IMUModuleID, WritingModeC)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)
@@ -68,7 +68,7 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		packedData, err := Pack(data, GNSSModuleAddr, WritingModeA)
+		packedData, err := Pack(data, GNSSModuleID, WritingModeA)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)
@@ -77,7 +77,7 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		packedData, err := Pack(data, GNSSModuleAddr, WritingModeB)
+		packedData, err := Pack(data, GNSSModuleID, WritingModeB)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)
@@ -94,7 +94,7 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		packedData, err := Pack(data, GNSSModuleAddr, WritingModeC)
+		packedData, err := Pack(data, GNSSModuleID, WritingModeC)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)

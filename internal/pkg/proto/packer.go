@@ -12,46 +12,43 @@ import (
 	"github.com/howeyc/crc16"
 )
 
-var syncFramePart = []byte{0x57, 0x10, 0xFF}
-
 // Pack ...
-func Pack(data any, addr Addr, msgID MessageID) ([]byte, error) {
+func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 	var (
 		err     error
 		payload []byte
 	)
 
-	switch addr {
-	case DepthMeterModuleAddr:
+	switch moduleID {
+	case DepthMeterModuleID:
 		payload, err = packDepthMeterData(data.(*DepthMeterData), msgID)
-	case LidarModuleAddr:
+	case LidarModuleID:
 		payload, err = packLidarData(data.(*LidarData), msgID)
-	case IMUModuleAddr:
+	case IMUModuleID:
 		payload, err = packIMUData(data.(*IMUData), msgID)
-	case GNSSModuleAddr:
+	case GNSSModuleID:
 		payload, err = packGNSSData(data.(*GNSSData), msgID)
-	case CheckModuleAddr:
+	case CheckModuleID:
 		payload, err = packCheckData(data.(*CheckData), msgID)
 	default:
-		panic(fmt.Sprintf("Pack is not implemented for this addr (%x)", addr))
+		panic(fmt.Sprintf("Pack is not implemented for this addr (%x)", moduleID))
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	payloadSize := uint8(len(payload))
-	id := uint8(addr) | uint8(msgID)
+	payloadSize := len(payload)
 	ts := uint32(time.Now().Unix())
 
-	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, servicePartSize+payloadSize)))
+	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+payloadSize)))
 
-	err = enc.Encode(syncFramePart, id, ts, payloadSize, payload)
+	err = enc.Encode(header, uint8(moduleID), uint8(msgID), dummySystemByte, ts, uint8(payloadSize), payload)
 	if err != nil {
 		return nil, err
 	}
 
-	checkSum := crc16.ChecksumCCITT(enc.Bytes()[syncFramePartSize:])
+	checkSum := crc16.ChecksumCCITT(enc.Bytes()[headerSize:])
 	if err = enc.Encode(checkSum); err != nil {
 		return nil, err
 	}
@@ -65,21 +62,23 @@ func Unpack(data []byte) (out any, err error) {
 	defer dec.Close()
 
 	// Пропускаем байты синхронизации
-	_, err = dec.Discard(syncFramePartSize)
+	_, err = dec.Discard(headerSize)
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		id          uint8
-		ts          uint32
-		payloadSize uint8
+		rawModuleID, rawMsgID, systemByte uint8
+		ts                                uint32
+		payloadSize                       uint8
 	)
 
-	err = dec.Decode(&id, &ts, &payloadSize)
+	err = dec.Decode(&rawModuleID, &rawMsgID, &systemByte, &ts, &payloadSize)
 	if err != nil {
 		return nil, err
 	}
+
+	_ = systemByte
 
 	payload, err := dec.Slice(int(payloadSize))
 	if err != nil {
@@ -93,26 +92,26 @@ func Unpack(data []byte) (out any, err error) {
 		return nil, err
 	}
 
-	if checkSum != crc16.ChecksumCCITT(data[syncFramePartSize:len(data)-checkSumSize]) {
+	if checkSum != crc16.ChecksumCCITT(data[headerSize:len(data)-checkSumSize]) {
 		return nil, fmt.Errorf("check sum missmatch")
 	}
 
-	addr := Addr(id) & Addr(ModuleAddrBitmask)
-	msgID := MessageID(id) & MessageID(MessageIDBitmask)
+	moduleID := ModuleID(rawModuleID)
+	msgID := MessageID(rawMsgID)
 
-	switch addr {
-	case DepthMeterModuleAddr:
+	switch moduleID {
+	case DepthMeterModuleID:
 		out, err = unpackDepthMeterData(payload, msgID)
-	case LidarModuleAddr:
+	case LidarModuleID:
 		out, err = unpackLidarData(payload, msgID)
-	case IMUModuleAddr:
+	case IMUModuleID:
 		out, err = unpackIMUData(payload, msgID)
-	case GNSSModuleAddr:
+	case GNSSModuleID:
 		out, err = unpackGNSSData(payload, msgID)
-	case CheckModuleAddr:
+	case CheckModuleID:
 		out, err = unpackCheckData(payload, msgID)
 	default:
-		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", addr))
+		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", rawModuleID))
 	}
 
 	return out, err

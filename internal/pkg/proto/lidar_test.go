@@ -28,7 +28,7 @@ func TestPackLidarDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упакова и распаковка данных", func(t *testing.T) {
-		packedData, err := Pack(data, LidarModuleAddr, WritingModeA)
+		packedData, err := Pack(data, LidarModuleID, WritingModeA)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)

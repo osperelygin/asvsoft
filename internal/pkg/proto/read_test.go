@@ -4,38 +4,38 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRead(t *testing.T) {
 	t.Run("успешное чтение фрейма протокола из потока байтов", func(t *testing.T) {
-		packedData, err := Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
-		assert.NoError(t, err)
+		packedData, err := Pack(depthMeterData, DepthMeterModuleID, WritingModeA)
+		require.NoError(t, err)
 
-		noiseBytes := []byte{0x01, 0x00, 0xFF, syncFramePart[0], syncFramePart[1], 0x05, 0x06}
+		noiseBytes := []byte{0x01, 0x00, 0xFF, header[0], 0x05, 0x06}
 
 		rawData := make([]byte, 0, len(packedData)+len(noiseBytes))
 		rawData = append(rawData, noiseBytes...)
 		rawData = append(rawData, packedData...)
 
 		b, err := Read(bytes.NewReader(rawData))
-		assert.NoError(t, err)
-		assert.Equal(t, packedData, b)
+		require.NoError(t, err)
+		require.Equal(t, packedData, b)
 	})
 
 	t.Run("отсутствие фрейма в потоке байтов", func(t *testing.T) {
 		emptyFlow := make([]byte, 1<<11)
 
 		b, err := Read(bytes.NewReader(emptyFlow))
-		assert.Nil(t, b)
-		assert.Error(t, err)
+		require.Nil(t, b)
+		require.Error(t, err)
 	})
 }
 
 func BenchmarkRead(b *testing.B) {
-	packedData, _ := Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
+	packedData, _ := Pack(depthMeterData, DepthMeterModuleID, WritingModeA)
 
-	noiseBytes := []byte{0x01, 0x00, 0xFF, syncFramePart[0], syncFramePart[1], 0x05, 0x06}
+	noiseBytes := []byte{0x01, 0x00, 0xFF, header[0], header[1], 0x05, 0x06}
 
 	rawData := make([]byte, 0, len(packedData)+len(noiseBytes))
 	rawData = append(rawData, noiseBytes...)
@@ -58,7 +58,7 @@ func BenchmarkRead(b *testing.B) {
 // 		noiseBytes := []byte{0, 0, 0, syncFramePart[0], syncFramePart[1], 0, 0}
 
 // 		packedData, err := packer.Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
-// 		assert.NoError(t, err)
+// 		require.NoError(t, err)
 
 // 		rawData := make([]byte, 0, len(packedData)+len(noiseBytes))
 // 		rawData = append(rawData, noiseBytes...)
@@ -67,8 +67,8 @@ func BenchmarkRead(b *testing.B) {
 // 		r := spireader.NewBytesReaderAdapter(bytes.NewReader(rawData))
 
 // 		b, err := Read(r, 1<<10)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, packedData, b)
+// 		require.NoError(t, err)
+// 		require.Equal(t, packedData, b)
 // 	})
 
 // 	t.Run("отсутствие фрейма в потоке байтов", func(t *testing.T) {
@@ -77,7 +77,7 @@ func BenchmarkRead(b *testing.B) {
 // 		r := spireader.NewBytesReaderAdapter(bytes.NewReader(emptyFlow))
 
 // 		b, err := Read(r, 1<<10)
-// 		assert.Nil(t, b)
-// 		assert.Error(t, err)
+// 		require.Nil(t, b)
+// 		require.Error(t, err)
 // 	})
 // }

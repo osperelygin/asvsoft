@@ -52,34 +52,34 @@ func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Tra
 
 	var (
 		m    measurer.Measurer
-		addr proto.Addr
+		addr proto.ModuleID
 	)
 
 	switch mode {
 	case DepthMeterMode:
 		m = depthmeter.New(srcPort)
-		addr = proto.DepthMeterModuleAddr
+		addr = proto.DepthMeterModuleID
 	case LidarMode:
 		m = lidar.New(srcPort)
-		addr = proto.LidarModuleAddr
+		addr = proto.LidarModuleID
 	case NeoM8tMode:
 		m, err = neom8t.New(cfg.NeoM8t, srcPort)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		addr = proto.GNSSModuleAddr
+		addr = proto.GNSSModuleID
 	case ImuMode:
 		m, err = sensehat.NewIMU(cfg.Imu)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		addr = proto.IMUModuleAddr
+		addr = proto.IMUModuleID
 	case NavMode:
 		panic("implement me")
 	case CheckMode:
-		addr = proto.CheckModuleAddr
+		addr = proto.CheckModuleID
 		m = check.New()
 	default:
 		panic(fmt.Sprintf("unknown run mode: %q", addr))

@@ -18,7 +18,7 @@ var depthMeterData = &DepthMeterData{
 
 func TestPackDepthMeterDataSuccess(t *testing.T) {
 	t.Run("успешная упакова и распаковка данных", func(t *testing.T) {
-		packedData, err := Pack(depthMeterData, DepthMeterModuleAddr, WritingModeA)
+		packedData, err := Pack(depthMeterData, DepthMeterModuleID, WritingModeA)
 		assert.NoError(t, err)
 
 		out, err := Unpack(packedData)

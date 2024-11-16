@@ -16,7 +16,7 @@ type Transmitter interface {
 	Transmit(ctx context.Context, data any) error
 }
 
-func NewCommonTransmitter(addr proto.Addr, mode proto.MessageID) *CommonTransmitter {
+func NewCommonTransmitter(addr proto.ModuleID, mode proto.MessageID) *CommonTransmitter {
 	return &CommonTransmitter{
 		addr: addr,
 		mode: mode,
@@ -25,7 +25,7 @@ func NewCommonTransmitter(addr proto.Addr, mode proto.MessageID) *CommonTransmit
 
 type CommonTransmitter struct {
 	w    io.Writer
-	addr proto.Addr
+	addr proto.ModuleID
 	mode proto.MessageID
 }
 
