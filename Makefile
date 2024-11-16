@@ -1,6 +1,8 @@
 PWD = $(CURDIR)
 # Имя сервиса
 SERVICE_NAME := asvsoft
+# Путь до бинарника сервиса
+SERVICE_BIN := $(PWD)/bin/$(SERVICE_NAME)
 # Дефолтная ОС
 GOOS ?= linux
 # Дефолтная архитектура
@@ -37,6 +39,7 @@ test:
 .PHONY: cover
 cover: test
 	go tool cover -html=coverage.out
+	@echo "cover executed"
 
 # Запуск бенчмарков
 .PHONY: bench
@@ -54,17 +57,20 @@ full-lint:
 .PHONY: build
 build: asvsoft
 asvsoft:
-	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO_BIN) build -o bin/$(SERVICE_NAME) -ldflags=$(LD_FLAGS) $(PWD)/cmd/$(SERVICE_NAME)
+	@echo "=================================================="
+	GOOS=$(GOOS) GOARCH=$(GOARCH) $(GO_BIN) build -o $(SERVICE_BIN) -ldflags=$(LD_FLAGS) $(PWD)/cmd/$(SERVICE_NAME)
 	@echo "build successfully"
 
-# Деплой сервиса на плату
+# Деплой опредленного сервиса на плату
 .PHONY: deploy-%
 deploy-%: build
-	scp $(PWD)/bin/$(SERVICE_NAME) $*:/usr/local/bin/
+	@echo "=================================================="
+	./scripts/deploy/ssh_deploy.sh "$(SERVICE_BIN)" "$*"
 	@echo "deploy successfully"
 
-# Деплой сервиса на плату
+# Деплой нескольких сервисов на плату
 .PHONY: deploy
 deploy: build
-	sed -n 's/^Host //p' ~/.ssh/config.d/raspi | while read SSH_HOST; do scp $(PWD)/bin/$(SERVICE_NAME) $$SSH_HOST:/usr/local/bin/; done
+	@echo "=================================================="
+	./scripts/deploy/ssh_deploy.sh "$(SERVICE_BIN)" "${SSH_HOST_LIST}"
 	@echo "deploy successfully"
