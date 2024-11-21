@@ -1,11 +1,12 @@
-// Package transmitter ...
-package transmitter
+package communication
 
 import (
 	"asvsoft/internal/pkg/proto"
 	"context"
 	"fmt"
 	"io"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var _ Transmitter = (*CommonTransmitter)(nil)
@@ -27,7 +28,7 @@ type CommonTransmitter struct {
 	mode proto.MessageID
 }
 
-func (ct *CommonTransmitter) SetWritter(w io.Writer) *CommonTransmitter {
+func (ct *CommonTransmitter) WithWritter(w io.Writer) *CommonTransmitter {
 	ct.w = w
 	return ct
 }
@@ -46,6 +47,9 @@ func (ct *CommonTransmitter) Transmit(_ context.Context, data any) error {
 	if err != nil {
 		return fmt.Errorf("cannot write measures: %w", err)
 	}
+
+	log.Debugf("raw transmitted data: %+v", b)
+	log.Infof("transmitted data: %+v", data)
 
 	return nil
 }

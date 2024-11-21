@@ -3,13 +3,13 @@ package controller
 
 import (
 	"asvsoft/internal/app/cli/common"
-	"asvsoft/internal/pkg/proto"
+	"asvsoft/internal/pkg/communication"
 	serialport "asvsoft/internal/pkg/serial-port"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/spf13/cobra"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -35,60 +35,12 @@ func Handler(_ *cobra.Command, _ []string) error {
 	defer srcPort.Close()
 
 	for {
-		rawData, err := proto.Read(srcPort)
+		data, err := communication.Recieve(srcPort)
 		if err != nil {
-			log.Errorf("read failed: %v", err)
-			continue
+			log.Errorf("receive failed: %v", err)
 		}
 
-		data, err := proto.Unpack(rawData)
-		if err != nil {
-			log.Errorf("unpack failed: %v", err)
-			continue
-		}
-
-		log.Infof("received data: %+v", data)
+		// TODO: обработка полученных данных
+		_ = data
 	}
 }
-
-// func Handler(_ *cobra.Command, _ []string) {
-// 	initSPI()
-
-// 	packer := proto.Packer{}
-// 	spiReader := spireader.SPIReader{}
-
-// 	for {
-// 		rawData, err := proto.Read(&spiReader, 1<<10)
-// 		if err != nil {
-// 			log.Printf("spi read failed: %v", err)
-// 		}
-
-// 		data, err := packer.Unpack(rawData)
-// 		if err != nil {
-// 			log.Printf("unpack failed: %v", err)
-// 		}
-
-// 		measures, ok := data.(*proto.DepthMeterData)
-// 		if !ok {
-// 			log.Printf("cast data to *proto.DepthMeterData failed: %v", err)
-// 		}
-
-// 		log.Printf("received measures: %#v", measures)
-// 	}
-// }
-
-// func initSPI() {
-// 	err := rpio.Open()
-// 	if err != nil {
-// 		log.Fatalf("cannot open rpio: %v", err)
-// 	}
-
-// 	err = rpio.SpiBegin(rpio.Spi0)
-// 	if err != nil {
-// 		log.Fatalf("cannot spi begin: %v", err)
-// 	}
-
-// 	rpio.SpiChipSelect(1)
-
-// 	log.Println("init SPI successful")
-// }

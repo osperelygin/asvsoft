@@ -16,9 +16,7 @@ func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "depthmeter",
 		Short: "Режим чтения данных с последовательного порта",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return common.Handler(cmd, args, &cfg, common.DepthMeterMode)
-		},
+		RunE:  common.Handler(&cfg, common.DepthMeterMode),
 	}
 	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)
 	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)

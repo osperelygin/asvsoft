@@ -3,17 +3,20 @@ package cli
 
 import (
 	"asvsoft/internal/app/cli/check"
-	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/app/cli/controller"
 	depthmeter "asvsoft/internal/app/cli/depth-meter"
 	"asvsoft/internal/app/cli/lidar"
 	"asvsoft/internal/app/cli/navigation"
+	neom8t "asvsoft/internal/app/cli/neo-m8t"
+	sensehat "asvsoft/internal/app/cli/sense-hat"
 	"asvsoft/internal/app/ctxutils"
 	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+var logLevel string
 
 func RootCmd() *cobra.Command {
 	rootCmd := cobra.Command{
@@ -23,7 +26,7 @@ func RootCmd() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().StringVar(
-		&common.LogLevel, "loglevel",
+		&logLevel, "loglevel",
 		"info", "",
 	)
 
@@ -32,6 +35,8 @@ func RootCmd() *cobra.Command {
 		depthmeter.Cmd(),
 		navigation.Cmd(),
 		lidar.Cmd(),
+		neom8t.Cmd(),
+		sensehat.Cmd(),
 		check.Cmd(),
 	)
 
@@ -39,7 +44,7 @@ func RootCmd() *cobra.Command {
 }
 
 func persistentPreRunHandler(cmd *cobra.Command, args []string) error { // nolint: revive
-	lvl, err := log.ParseLevel(common.LogLevel)
+	lvl, err := log.ParseLevel(logLevel)
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,7 @@
-// Package measurer ...
-package measurer
+// Package communication ...
+package communication
 
 import (
-	"asvsoft/internal/pkg/transmitter"
 	"context"
 	"os"
 	"os/signal"
@@ -11,17 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Measurement interface {
-	Data() any
-	Error() error
-}
-
-type Measurer interface {
-	Measure(ctx context.Context) Measurement
-	Close() error
-}
-
-func Run(ctx context.Context, m Measurer, t transmitter.Transmitter) error {
+func Entrypoint(ctx context.Context, m Measurer, t Transmitter) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

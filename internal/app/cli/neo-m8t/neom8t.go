@@ -1,5 +1,5 @@
-// Package neo предоставляет подкоманду neo
-package neo
+// Package neom8t предоставляет подкоманду neo
+package neom8t
 
 import (
 	"asvsoft/internal/app/cli/common"
@@ -15,11 +15,9 @@ var (
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "neo",
+		Use:   "neo-m8t",
 		Short: "Режим чтения данных с последовательного порта",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return common.Handler(cmd, args, &cfg, common.NeoM8tMode)
-		},
+		RunE:  common.Handler(&cfg, common.NeoM8tMode),
 	}
 	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
 	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)

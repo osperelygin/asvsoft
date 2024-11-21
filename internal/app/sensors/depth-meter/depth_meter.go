@@ -2,9 +2,8 @@
 package depthmeter
 
 import (
-	"asvsoft/internal/app/ds"
+	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/encoder"
-	"asvsoft/internal/pkg/measurer"
 	"asvsoft/internal/pkg/proto"
 	"bytes"
 	"context"
@@ -36,8 +35,8 @@ func New(r io.ReadCloser) *DepthMeter {
 	}
 }
 
-func (dm *DepthMeter) Measure(_ context.Context) measurer.Measurement {
-	return ds.NewMeasurement(dm.read())
+func (dm *DepthMeter) Measure(_ context.Context) communication.Measurement {
+	return communication.NewCommonMeasurement(dm.read())
 }
 
 func (dm *DepthMeter) Close() error {
@@ -61,7 +60,7 @@ func (dm *DepthMeter) read() (*proto.DepthMeterData, error) {
 
 	frame := rawData[start : start+frameSize]
 
-	log.Debugf("[depthmeter] read raw data: %v", frame)
+	log.Debugf("raw read measure: %v", frame)
 
 	sum := 0
 	for idx := 0; idx < frameSize-1; idx++ {

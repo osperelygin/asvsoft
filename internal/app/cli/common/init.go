@@ -7,10 +7,9 @@ import (
 	"asvsoft/internal/app/sensors/lidar"
 	neom8t "asvsoft/internal/app/sensors/neo-m8t"
 	sensehat "asvsoft/internal/app/sensors/sense-hat"
-	"asvsoft/internal/pkg/measurer"
+	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/proto"
 	serialport "asvsoft/internal/pkg/serial-port"
-	"asvsoft/internal/pkg/transmitter"
 	"context"
 	"fmt"
 
@@ -28,7 +27,7 @@ const (
 	CheckMode
 )
 
-func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Transmitter, error) {
+func Init(ctx context.Context, mode RunMode) (communication.Measurer, communication.Transmitter, error) {
 	cfg := config.FromContext(ctx)
 
 	var (
@@ -51,7 +50,7 @@ func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Tra
 	}
 
 	var (
-		m    measurer.Measurer
+		m    communication.Measurer
 		addr proto.ModuleID
 	)
 
@@ -85,7 +84,7 @@ func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Tra
 		panic(fmt.Sprintf("unknown run mode: %q", addr))
 	}
 
-	t := transmitter.NewCommonTransmitter(addr, proto.WritingModeA)
+	t := communication.NewCommonTransmitter(addr, proto.WritingModeA)
 
 	if !cfg.DstSerialPort.TransmittingDisabled {
 		dstPort, err := serialport.New(cfg.DstSerialPort)
@@ -99,7 +98,7 @@ func Init(ctx context.Context, mode RunMode) (measurer.Measurer, transmitter.Tra
 		}
 
 		dstPort.SetLogger(log.StandardLogger())
-		t.SetWritter(dstPort)
+		t.WithWritter(dstPort)
 	}
 
 	return m, t, nil

@@ -2,9 +2,8 @@
 package lidar
 
 import (
-	"asvsoft/internal/app/ds"
+	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/encoder"
-	"asvsoft/internal/pkg/measurer"
 	"asvsoft/internal/pkg/proto"
 	"bytes"
 	"context"
@@ -36,8 +35,8 @@ func New(r io.ReadCloser) *Lidar {
 	}
 }
 
-func (l *Lidar) Measure(_ context.Context) measurer.Measurement {
-	return ds.NewMeasurement(l.read())
+func (l *Lidar) Measure(_ context.Context) communication.Measurement {
+	return communication.NewCommonMeasurement(l.read())
 }
 
 func (l *Lidar) Close() error {

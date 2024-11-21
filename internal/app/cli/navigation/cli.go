@@ -3,8 +3,6 @@ package navigation
 
 import (
 	"asvsoft/internal/app/cli/common"
-	"asvsoft/internal/app/cli/navigation/neo"
-	sensehat "asvsoft/internal/app/cli/navigation/sense-hat"
 	"asvsoft/internal/pkg/proto"
 	serialport "asvsoft/internal/pkg/serial-port"
 	"fmt"
@@ -22,23 +20,21 @@ const (
 var (
 	mode   string
 	srcCfg *serialport.Config
+	dstCfg *serialport.Config // nolint: unused
 )
 
 func Cmd() *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "nav",
+		Use:   "navigation",
 		Short: "блок навигации",
 		RunE:  Handler,
 	}
 	srcCfg = common.AddSerialSourceFlags(&cmd)
+	dstCfg = common.AddSerialDestinationFlags(&cmd)
 
 	cmd.Flags().StringVar(
 		&mode, "mode",
 		gnssMode, "режим чтения данных: gnss/imu",
-	)
-	cmd.AddCommand(
-		sensehat.Cmd(),
-		neo.Cmd(),
 	)
 
 	return &cmd
@@ -49,6 +45,8 @@ func Handler(_ *cobra.Command, _ []string) error {
 		port serial.Port
 		err  error
 	)
+
+	// TODO: перейти к общему методу инициализации
 
 	switch mode {
 	case gnssMode, imuMode:

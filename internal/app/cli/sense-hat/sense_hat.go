@@ -18,9 +18,7 @@ func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sense-hat",
 		Short: "Обработка и передача данных SENSE HAT (C)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return common.Handler(cmd, args, &cfg, common.ImuMode)
-		},
+		RunE:  common.Handler(&cfg, common.ImuMode),
 	}
 
 	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)

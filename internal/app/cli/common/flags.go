@@ -9,9 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// LogLevel уровень логирования
-var LogLevel string
-
 const (
 	defaultBaudrate = 4800
 	defaultTimeout  = 5 * time.Second
