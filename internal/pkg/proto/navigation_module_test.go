@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPackIMUDataSuccess(t *testing.T) {
@@ -16,20 +16,20 @@ func TestPackIMUDataSuccess(t *testing.T) {
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
 		packedData, err := Pack(data, IMUModuleID, WritingModeA)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
-		assert.Equal(t, data, out.(*IMUData))
+		require.NoError(t, err)
+		require.Equal(t, data, out.(*IMUData))
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
 		packedData, err := Pack(data, IMUModuleID, WritingModeB)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
-		assert.Equal(t, &IMUData{
+		require.NoError(t, err)
+		require.Equal(t, &IMUData{
 			Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
 			Ax: data.Ax, Ay: data.Ay, Az: data.Az,
 		}, out.(*IMUData))
@@ -37,11 +37,11 @@ func TestPackIMUDataSuccess(t *testing.T) {
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
 		packedData, err := Pack(data, IMUModuleID, WritingModeC)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
-		assert.Equal(t, &IMUData{
+		require.NoError(t, err)
+		require.Equal(t, &IMUData{
 			Mx: data.Mx, My: data.My, Mz: data.Mz,
 		}, out.(*IMUData))
 	})
@@ -69,20 +69,20 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
 		packedData, err := Pack(data, GNSSModuleID, WritingModeA)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
-		assert.Equal(t, data, out.(*GNSSData))
+		require.NoError(t, err)
+		require.Equal(t, data, out.(*GNSSData))
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
 		packedData, err := Pack(data, GNSSModuleID, WritingModeB)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
-		assert.Equal(t, &GNSSData{
+		require.NoError(t, err)
+		require.Equal(t, &GNSSData{
 			ITowNAVPOSLLH: data.ITowNAVPOSLLH,
 			Lon:           data.Lon,
 			Lat:           data.Lat,
@@ -95,11 +95,11 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
 		packedData, err := Pack(data, GNSSModuleID, WritingModeC)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
-		assert.Equal(t, &GNSSData{
+		require.NoError(t, err)
+		require.Equal(t, &GNSSData{
 			ITowNAVVELNED: data.ITowNAVVELNED,
 			VelN:          data.VelN,
 			VelE:          data.VelE,

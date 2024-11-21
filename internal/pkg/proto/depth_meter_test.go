@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var depthMeterData = &DepthMeterData{
@@ -19,11 +19,11 @@ var depthMeterData = &DepthMeterData{
 func TestPackDepthMeterDataSuccess(t *testing.T) {
 	t.Run("успешная упакова и распаковка данных", func(t *testing.T) {
 		packedData, err := Pack(depthMeterData, DepthMeterModuleID, WritingModeA)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.Equal(t, depthMeterData, out.(*DepthMeterData))
+		require.Equal(t, depthMeterData, out.(*DepthMeterData))
 	})
 }

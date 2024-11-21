@@ -3,7 +3,7 @@ package proto
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPackLidarDataSuccess(t *testing.T) {
@@ -29,11 +29,11 @@ func TestPackLidarDataSuccess(t *testing.T) {
 
 	t.Run("успешная упакова и распаковка данных", func(t *testing.T) {
 		packedData, err := Pack(data, LidarModuleID, WritingModeA)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		out, err := Unpack(packedData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.Equal(t, data, out.(*LidarData))
+		require.Equal(t, data, out.(*LidarData))
 	})
 }
