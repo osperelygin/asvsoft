@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var _ Transmitter = (*CommonTransmitter)(nil)
@@ -43,8 +41,6 @@ func (ct *CommonTransmitter) Transmit(_ context.Context, data any) error {
 	if err != nil {
 		return fmt.Errorf("cannot pack measure: %w", err)
 	}
-
-	log.Debugf("packed measure: %v", b)
 
 	_, err = ct.w.Write(b)
 	if err != nil {

@@ -61,7 +61,7 @@ func (dm *DepthMeter) read() (*proto.DepthMeterData, error) {
 
 	frame := rawData[start : start+frameSize]
 
-	log.Debugf("read frame: %v", frame)
+	log.Debugf("[depthmeter] read raw data: %v", frame)
 
 	sum := 0
 	for idx := 0; idx < frameSize-1; idx++ {

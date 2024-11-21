@@ -118,7 +118,7 @@ func (n *NeoM8t) measure() (*proto.GNSSData, error) {
 				data.HMSL = navPosllhMsg.HMSL_mm
 				data.HAcc = navPosllhMsg.HAcc_mm
 				data.VAcc = navPosllhMsg.VAcc_mm
-				log.Debugf("read NAV-POSLLH msg: %#v", navPosllhMsg)
+				log.Debugf("[NEO-M8T] read NAV-POSLLH msg: %#v", navPosllhMsg)
 			} else if navVelnedMsg, ok := msg.(*ubx.NavVelned); ok {
 				navVelnedMsgRead = true
 				data.ITowNAVVELNED = navVelnedMsg.ITOW_ms
@@ -130,7 +130,7 @@ func (n *NeoM8t) measure() (*proto.GNSSData, error) {
 				data.Heading = navVelnedMsg.Heading_dege5
 				data.SAcc = navVelnedMsg.SAcc_cm_s
 				data.CAcc = navVelnedMsg.CAcc_dege5
-				log.Debugf("read NAV-VELNED msg: %#v", navVelnedMsg)
+				log.Debugf("[NEO-M8T] read NAV-VELNED msg: %#v", navVelnedMsg)
 			}
 
 			if !navPosllhMsgRead || !navVelnedMsgRead {

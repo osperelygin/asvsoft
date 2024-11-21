@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ModuleID uint8
@@ -166,11 +168,17 @@ func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 		return nil, err
 	}
 
-	return enc.Bytes(), nil
+	rawData := enc.Bytes()
+
+	log.Debugf("pack: raw data: %v", rawData)
+
+	return rawData, nil
 }
 
 // Unpack ...
 func Unpack(data []byte) (out any, err error) {
+	log.Debugf("unpack: raw data: %v", data)
+
 	dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(data)))
 	defer dec.Close()
 

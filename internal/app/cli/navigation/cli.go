@@ -73,6 +73,6 @@ func Handler(_ *cobra.Command, _ []string) error {
 			log.Errorf("unpack failed: %v", err)
 		}
 
-		log.Printf("received: %+v", data)
+		log.Printf("received data: %+v", data)
 	}
 }

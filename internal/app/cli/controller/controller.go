@@ -47,7 +47,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 			continue
 		}
 
-		log.Printf("received: %+v", data)
+		log.Infof("received data: %+v", data)
 	}
 }
 
