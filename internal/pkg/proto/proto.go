@@ -4,12 +4,11 @@ package proto
 
 import (
 	"asvsoft/internal/pkg/encoder"
+	"asvsoft/pkg/crc8"
 	"bytes"
 	"fmt"
 	"io"
 	"time"
-
-	"github.com/howeyc/crc16"
 )
 
 type ModuleID uint8
@@ -47,7 +46,7 @@ const (
 	msgIDSize        = 1
 	timestampSize    = 4
 	payloadBytesSize = 1
-	checkSumSize     = 2
+	checkSumSize     = 1
 )
 
 const serviceBytesSize = headerSize +
@@ -160,8 +159,10 @@ func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 		return nil, err
 	}
 
-	checkSum := crc16.ChecksumCCITT(enc.Bytes()[headerSize:])
-	if err = enc.Encode(checkSum); err != nil {
+	checkSum := crc8.ChecksumSMBus(enc.Bytes()[headerSize:])
+
+	err = enc.Encode(checkSum)
+	if err != nil {
 		return nil, err
 	}
 
@@ -197,14 +198,14 @@ func Unpack(data []byte) (out any, err error) {
 		return nil, err
 	}
 
-	var checkSum uint16
+	var checkSum uint8
 
 	err = dec.Decode(&checkSum)
 	if err != nil {
 		return nil, err
 	}
 
-	if checkSum != crc16.ChecksumCCITT(data[headerSize:len(data)-checkSumSize]) {
+	if checkSum != crc8.ChecksumSMBus(data[headerSize:len(data)-checkSumSize]) {
 		return nil, fmt.Errorf("check sum missmatch")
 	}
 
