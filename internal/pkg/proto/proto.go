@@ -154,7 +154,7 @@ func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 
 	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+payloadSize)))
 
-	err = enc.Encode(header, uint8(moduleID), uint8(msgID), dummySystemByte, ts, uint8(payloadSize), payload)
+	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), ts, uint8(payloadSize), payload)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func Unpack(data []byte) (out any, err error) {
 		payloadSize                       uint8
 	)
 
-	err = dec.Decode(&rawModuleID, &rawMsgID, &systemByte, &ts, &payloadSize)
+	err = dec.Decode(&systemByte, &rawModuleID, &rawMsgID, &ts, &payloadSize)
 	if err != nil {
 		return nil, err
 	}

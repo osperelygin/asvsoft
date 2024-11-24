@@ -59,7 +59,6 @@ func packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
 			in.Ax, in.Ay, in.Az,
 			in.GyrFactor,
 			in.Gx, in.Gy, in.Gz,
-			in.Mx, in.My, in.Mz,
 		)
 	case WritingModeB:
 		buf = bytes.NewBuffer(make([]byte, 0, imuDataPayloadSizeModeB))
@@ -68,6 +67,7 @@ func packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
 			in.Ax, in.Ay, in.Az,
 			in.GyrFactor,
 			in.Gx, in.Gy, in.Gz,
+			in.Mx, in.My, in.Mz,
 		)
 	case WritingModeC:
 		buf = bytes.NewBuffer(make([]byte, 0, imuDataPayloadSizeModeC))
@@ -92,7 +92,6 @@ func unpackIMUData(in []byte, msgID MessageID) (out *IMUData, err error) {
 			&out.Ax, &out.Ay, &out.Az,
 			&out.GyrFactor,
 			&out.Gx, &out.Gy, &out.Gz,
-			&out.Mx, &out.My, &out.Mz,
 		)
 	case WritingModeB:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
@@ -101,6 +100,7 @@ func unpackIMUData(in []byte, msgID MessageID) (out *IMUData, err error) {
 			&out.Ax, &out.Ay, &out.Az,
 			&out.GyrFactor,
 			&out.Gx, &out.Gy, &out.Gz,
+			&out.Mx, &out.My, &out.Mz,
 		)
 	case WritingModeC:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))

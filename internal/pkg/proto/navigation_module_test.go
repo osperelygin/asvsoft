@@ -20,7 +20,10 @@ func TestPackIMUDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, data, out.(*IMUData))
+		require.Equal(t, &IMUData{
+			Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
+			Ax: data.Ax, Ay: data.Ay, Az: data.Az,
+		}, out.(*IMUData))
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
@@ -29,10 +32,7 @@ func TestPackIMUDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, &IMUData{
-			Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
-			Ax: data.Ax, Ay: data.Ay, Az: data.Az,
-		}, out.(*IMUData))
+		require.Equal(t, data, out.(*IMUData))
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
