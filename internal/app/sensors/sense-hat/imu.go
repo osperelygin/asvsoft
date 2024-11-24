@@ -127,7 +127,7 @@ func (imu *IMU) RawMeasure() ([]byte, error) {
 		imu.buf, _, err = imu.inertialBus.ReadRegBytes(QMI8658RegisterAxL, 12)
 	}
 
-	log.Debugf("[sense-hat] raw data: %v", imu.buf)
+	log.Debugf("raw read measure: %v", imu.buf)
 
 	return imu.buf, err
 }

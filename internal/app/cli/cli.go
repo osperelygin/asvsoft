@@ -11,6 +11,7 @@ import (
 	sensehat "asvsoft/internal/app/cli/sense-hat"
 	"asvsoft/internal/app/ctxutils"
 	"os"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -52,8 +53,9 @@ func persistentPreRunHandler(cmd *cobra.Command, args []string) error { // nolin
 	log.SetLevel(lvl)
 	log.SetOutput(os.Stdout)
 	log.SetFormatter(&log.TextFormatter{
-		TimestampFormat: "Jan _2 15:04:05.000",
+		TimestampFormat: time.StampMilli,
 		FullTimestamp:   true,
+		ForceColors:     true,
 	})
 
 	appinfo := ctxutils.GetAppInfo(cmd.Context())
