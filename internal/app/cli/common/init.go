@@ -27,7 +27,7 @@ const (
 	CheckMode
 )
 
-func Init(ctx context.Context, mode RunMode) (communication.Measurer, communication.Transmitter, error) {
+func Init(ctx context.Context, mode RunMode) (communication.Measurer, *communication.Sender, error) {
 	cfg := config.FromContext(ctx)
 
 	var (
@@ -84,7 +84,7 @@ func Init(ctx context.Context, mode RunMode) (communication.Measurer, communicat
 		panic(fmt.Sprintf("unknown run mode: %q", addr))
 	}
 
-	t := communication.NewCommonTransmitter(addr, proto.WritingModeA)
+	s := communication.NewSender(addr, proto.WritingModeA)
 
 	if !cfg.DstSerialPort.TransmittingDisabled {
 		dstPort, err := serialport.New(cfg.DstSerialPort)
@@ -98,8 +98,8 @@ func Init(ctx context.Context, mode RunMode) (communication.Measurer, communicat
 		}
 
 		dstPort.SetLogger(log.StandardLogger())
-		t.WithWritter(dstPort)
+		s.WithWritter(dstPort)
 	}
 
-	return m, t, nil
+	return m, s, nil
 }

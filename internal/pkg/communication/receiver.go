@@ -8,8 +8,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Recieve(r io.Reader) (*proto.Message, error) {
-	rawData, err := proto.Read(r)
+type Receiver struct {
+	rc io.ReadCloser
+}
+
+func NewReceiver(rc io.ReadCloser) *Receiver {
+	return &Receiver{
+		rc: rc,
+	}
+}
+
+func (r *Receiver) Recieve() (*proto.Message, error) {
+	rawData, err := proto.Read(r.rc)
 	if err != nil {
 		return nil, fmt.Errorf("read failed: %v", err)
 	}
@@ -24,4 +34,8 @@ func Recieve(r io.Reader) (*proto.Message, error) {
 	log.Infof("received data: %v", msg)
 
 	return msg, nil
+}
+
+func (r *Receiver) Close() error {
+	return r.rc.Close()
 }

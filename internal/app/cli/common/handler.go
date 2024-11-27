@@ -11,12 +11,12 @@ func Handler(cfg *config.Config, mode RunMode) func(cmd *cobra.Command, args []s
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := config.WrapContext(cmd.Context(), cfg)
 
-		m, t, err := Init(ctx, mode)
+		m, s, err := Init(ctx, mode)
 		if err != nil {
 			return err
 		}
 
-		err = communication.Entrypoint(ctx, m, t)
+		err = communication.Entrypoint(ctx, m, s)
 		if err != nil {
 			return err
 		}

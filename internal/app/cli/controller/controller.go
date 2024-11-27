@@ -32,10 +32,17 @@ func Handler(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("cannot open serial port %q: %v", controllerConfig.Port, err)
 	}
-	defer srcPort.Close()
+
+	r := communication.NewReceiver(srcPort)
+	defer func() {
+		err = r.Close()
+		if err != nil {
+			log.Errorf("cannot close receiver: %v", err)
+		}
+	}()
 
 	for {
-		msg, err := communication.Recieve(srcPort)
+		msg, err := r.Recieve()
 		if err != nil {
 			log.Errorf("receive failed: %v", err)
 		}

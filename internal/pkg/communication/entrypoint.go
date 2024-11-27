@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Entrypoint(ctx context.Context, m Measurer, t Transmitter) error {
+func Entrypoint(ctx context.Context, m Measurer, s *Sender) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -54,7 +54,7 @@ LOOP:
 
 			log.Infof("read measure: %+v", measure)
 
-			err = t.Transmit(ctx, measure)
+			err = s.Send(ctx, measure)
 			if err != nil {
 				log.Errorf("cannot transmit measure: %v", err)
 			}
