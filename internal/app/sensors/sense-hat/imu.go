@@ -1,7 +1,6 @@
 package sensehat
 
 import (
-	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/encoder"
 	"asvsoft/internal/pkg/proto"
 	"bytes"
@@ -66,9 +65,9 @@ func NewIMU(config *ImuConfig) (*IMU, error) {
 	return imu, nil
 }
 
-func (imu *IMU) Measure(_ context.Context) communication.Measurement {
+func (imu *IMU) Measure(_ context.Context) (any, error) {
 	time.Sleep(imu.config.Period)
-	return communication.NewCommonMeasurement(imu.measure())
+	return imu.measure()
 }
 
 func (imu *IMU) measure() (*proto.IMUData, error) {

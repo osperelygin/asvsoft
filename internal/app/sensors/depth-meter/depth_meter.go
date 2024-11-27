@@ -2,7 +2,6 @@
 package depthmeter
 
 import (
-	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/encoder"
 	"asvsoft/internal/pkg/proto"
 	"bytes"
@@ -35,15 +34,15 @@ func New(r io.ReadCloser) *DepthMeter {
 	}
 }
 
-func (dm *DepthMeter) Measure(_ context.Context) communication.Measurement {
-	return communication.NewCommonMeasurement(dm.read())
+func (dm *DepthMeter) Measure(_ context.Context) (any, error) {
+	return dm.measure()
 }
 
 func (dm *DepthMeter) Close() error {
 	return dm.r.Close()
 }
 
-func (dm *DepthMeter) read() (*proto.DepthMeterData, error) {
+func (dm *DepthMeter) measure() (*proto.DepthMeterData, error) {
 	_, err := dm.r.Read(rawData)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read bytes from port: %w", err)

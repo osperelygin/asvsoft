@@ -2,7 +2,6 @@
 package neom8t
 
 import (
-	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/proto"
 	"context"
 	"fmt"
@@ -81,8 +80,8 @@ func (n *NeoM8t) configurate(msgIDList ...byte) error {
 	return nil
 }
 
-func (n *NeoM8t) Measure(_ context.Context) communication.Measurement {
-	return communication.NewCommonMeasurement(n.measure())
+func (n *NeoM8t) Measure(_ context.Context) (any, error) {
+	return n.measure()
 }
 
 func (n *NeoM8t) Close() error {

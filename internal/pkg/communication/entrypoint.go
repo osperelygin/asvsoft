@@ -10,6 +10,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type Measurer interface {
+	Measure(ctx context.Context) (any, error)
+	Close() error
+}
+
 func Entrypoint(ctx context.Context, m Measurer, s *Sender) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -17,7 +22,7 @@ func Entrypoint(ctx context.Context, m Measurer, s *Sender) error {
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	measurementChan := make(chan Measurement)
+	measureChan := make(chan any)
 
 	go func() {
 		for {
@@ -28,11 +33,20 @@ func Entrypoint(ctx context.Context, m Measurer, s *Sender) error {
 					log.Errorf("failed to close measurer: %v", err)
 				}
 
-				close(measurementChan)
+				close(measureChan)
 
 				return
 			default:
-				measurementChan <- m.Measure(ctx)
+				measure, err := m.Measure(ctx)
+				if err != nil {
+					log.Errorf("cannot read measure: %v", err)
+
+					continue
+				}
+
+				log.Infof("read measure: %+v", measure)
+
+				measureChan <- measure
 			}
 		}
 	}()
@@ -44,17 +58,8 @@ LOOP:
 			log.Infoln("signal called, cancel operations")
 			cancel()
 			break LOOP
-		case measurement := <-measurementChan:
-			measure, err := measurement.Data(), measurement.Error()
-			if err != nil {
-				log.Errorf("cannot read measure: %v", err)
-
-				continue
-			}
-
-			log.Infof("read measure: %+v", measure)
-
-			err = s.Send(ctx, measure)
+		case measure := <-measureChan:
+			err := s.Send(ctx, measure)
 			if err != nil {
 				log.Errorf("cannot transmit measure: %v", err)
 			}

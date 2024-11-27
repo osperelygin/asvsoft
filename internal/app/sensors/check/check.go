@@ -2,7 +2,6 @@
 package check
 
 import (
-	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/proto"
 	"context"
 	"math/rand"
@@ -19,9 +18,9 @@ func New() *Measurer {
 }
 
 // Measure sleep 500 ms and returns measurement with random uint32
-func (dm *Measurer) Measure(_ context.Context) communication.Measurement {
+func (dm *Measurer) Measure(_ context.Context) (any, error) {
 	time.Sleep(500 * time.Millisecond)
-	return communication.NewCommonMeasurement(&proto.CheckData{Value: rand.Uint32()}, nil) // nolint: gosec
+	return &proto.CheckData{Value: rand.Uint32()}, nil // nolint: gosec
 }
 
 // Close ...
