@@ -24,6 +24,12 @@ func TestPackDepthMeterDataSuccess(t *testing.T) {
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
 
-		require.Equal(t, depthMeterData, out.(*DepthMeterData))
+		require.Equal(t, &Message{
+			ModuleID:  DepthMeterModuleID,
+			MsgID:     WritingModeA,
+			Payload:   depthMeterData,
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 }

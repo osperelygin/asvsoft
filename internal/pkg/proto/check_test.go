@@ -17,6 +17,12 @@ func TestCheckDataSuccess(t *testing.T) {
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
 
-		require.Equal(t, data, out.(*CheckData))
+		require.Equal(t, &Message{
+			ModuleID:  CheckModuleID,
+			MsgID:     WritingModeA,
+			Payload:   data,
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 }

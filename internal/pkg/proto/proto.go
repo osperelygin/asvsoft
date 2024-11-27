@@ -31,7 +31,7 @@ const (
 type MessageID uint8
 
 const (
-	ReadingModeA = 0x11 + iota
+	ReadingModeA MessageID = 0x11 + iota
 	ReadingModeB
 	ReadingModeC
 	WritingModeA
@@ -64,11 +64,26 @@ const (
 	defaultReadRetries = 1024
 )
 
-var header = []byte{0xFA, 0xFA}
-
 const (
 	dummySystemByte byte = 0xFF
 )
+
+var header = []byte{0xFA, 0xFA}
+
+type Message struct {
+	ModuleID  ModuleID
+	MsgID     MessageID
+	Timestamp uint32
+	Payload   any
+	CheckSum  uint8
+}
+
+func (m *Message) String() string {
+	return fmt.Sprintf(
+		"{moduleID:%#X,msgID:%#X,ts:%d,payload:%+v,checksum: %#X}",
+		m.ModuleID, m.MsgID, m.Timestamp, m.Payload, m.CheckSum,
+	)
+}
 
 // Read ищет в потоке принимаемых байтов синхронизовачный заголовок
 // и затем вычитает фрейм протокола. Возвращает полученный фрейм и ошибку.
@@ -170,12 +185,12 @@ func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 }
 
 // Unpack ...
-func Unpack(data []byte) (out any, err error) {
+func Unpack(data []byte) (*Message, error) {
 	dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(data)))
 	defer dec.Close()
 
 	// Пропускаем байты синхронизации
-	_, err = dec.Discard(headerSize)
+	_, err := dec.Discard(headerSize)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +208,7 @@ func Unpack(data []byte) (out any, err error) {
 
 	_ = systemByte
 
-	payload, err := dec.Slice(int(payloadSize))
+	rawPayload, err := dec.Slice(int(payloadSize))
 	if err != nil {
 		return nil, err
 	}
@@ -212,20 +227,32 @@ func Unpack(data []byte) (out any, err error) {
 	moduleID := ModuleID(rawModuleID)
 	msgID := MessageID(rawMsgID)
 
+	var payload any
+
 	switch moduleID {
 	case DepthMeterModuleID:
-		out, err = unpackDepthMeterData(payload, msgID)
+		payload, err = unpackDepthMeterData(rawPayload, msgID)
 	case LidarModuleID:
-		out, err = unpackLidarData(payload, msgID)
+		payload, err = unpackLidarData(rawPayload, msgID)
 	case IMUModuleID:
-		out, err = unpackIMUData(payload, msgID)
+		payload, err = unpackIMUData(rawPayload, msgID)
 	case GNSSModuleID:
-		out, err = unpackGNSSData(payload, msgID)
+		payload, err = unpackGNSSData(rawPayload, msgID)
 	case CheckModuleID:
-		out, err = unpackCheckData(payload, msgID)
+		payload, err = unpackCheckData(rawPayload, msgID)
 	default:
 		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", rawModuleID))
 	}
 
-	return out, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &Message{
+		ModuleID:  moduleID,
+		MsgID:     msgID,
+		Timestamp: ts,
+		Payload:   payload,
+		CheckSum:  checkSum,
+	}, nil
 }

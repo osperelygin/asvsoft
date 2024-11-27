@@ -35,12 +35,12 @@ func Handler(_ *cobra.Command, _ []string) error {
 	defer srcPort.Close()
 
 	for {
-		data, err := communication.Recieve(srcPort)
+		msg, err := communication.Recieve(srcPort)
 		if err != nil {
 			log.Errorf("receive failed: %v", err)
 		}
 
 		// TODO: обработка полученных данных
-		_ = data
+		_ = msg
 	}
 }

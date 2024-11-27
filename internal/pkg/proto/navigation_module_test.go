@@ -20,10 +20,16 @@ func TestPackIMUDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, &IMUData{
-			Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
-			Ax: data.Ax, Ay: data.Ay, Az: data.Az,
-		}, out.(*IMUData))
+		require.Equal(t, &Message{
+			ModuleID: IMUModuleID,
+			MsgID:    WritingModeA,
+			Payload: &IMUData{
+				Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
+				Ax: data.Ax, Ay: data.Ay, Az: data.Az,
+			},
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
@@ -32,7 +38,13 @@ func TestPackIMUDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, data, out.(*IMUData))
+		require.Equal(t, &Message{
+			ModuleID:  IMUModuleID,
+			MsgID:     WritingModeB,
+			Payload:   data,
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
@@ -41,9 +53,15 @@ func TestPackIMUDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, &IMUData{
-			Mx: data.Mx, My: data.My, Mz: data.Mz,
-		}, out.(*IMUData))
+		require.Equal(t, &Message{
+			ModuleID: IMUModuleID,
+			MsgID:    WritingModeC,
+			Payload: &IMUData{
+				Mx: data.Mx, My: data.My, Mz: data.Mz,
+			},
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 }
 
@@ -73,7 +91,13 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, data, out.(*GNSSData))
+		require.Equal(t, &Message{
+			ModuleID:  GNSSModuleID,
+			MsgID:     WritingModeA,
+			Payload:   data,
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
@@ -82,15 +106,21 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, &GNSSData{
-			ITowNAVPOSLLH: data.ITowNAVPOSLLH,
-			Lon:           data.Lon,
-			Lat:           data.Lat,
-			Height:        data.Height,
-			HMSL:          data.HMSL,
-			HAcc:          data.HAcc,
-			VAcc:          data.VAcc,
-		}, out.(*GNSSData))
+		require.Equal(t, &Message{
+			ModuleID: GNSSModuleID,
+			MsgID:    WritingModeB,
+			Payload: &GNSSData{
+				ITowNAVPOSLLH: data.ITowNAVPOSLLH,
+				Lon:           data.Lon,
+				Lat:           data.Lat,
+				Height:        data.Height,
+				HMSL:          data.HMSL,
+				HAcc:          data.HAcc,
+				VAcc:          data.VAcc,
+			},
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
@@ -99,16 +129,22 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
-		require.Equal(t, &GNSSData{
-			ITowNAVVELNED: data.ITowNAVVELNED,
-			VelN:          data.VelN,
-			VelE:          data.VelE,
-			VelD:          data.VelD,
-			Speed:         data.Speed,
-			GSppeed:       data.GSppeed,
-			Heading:       data.Heading,
-			SAcc:          data.SAcc,
-			CAcc:          data.CAcc,
-		}, out.(*GNSSData))
+		require.Equal(t, &Message{
+			ModuleID: GNSSModuleID,
+			MsgID:    WritingModeC,
+			Payload: &GNSSData{
+				ITowNAVVELNED: data.ITowNAVVELNED,
+				VelN:          data.VelN,
+				VelE:          data.VelE,
+				VelD:          data.VelD,
+				Speed:         data.Speed,
+				GSppeed:       data.GSppeed,
+				Heading:       data.Heading,
+				SAcc:          data.SAcc,
+				CAcc:          data.CAcc,
+			},
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 }

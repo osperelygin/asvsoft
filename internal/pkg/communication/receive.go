@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Recieve(r io.Reader) (any, error) {
+func Recieve(r io.Reader) (*proto.Message, error) {
 	rawData, err := proto.Read(r)
 	if err != nil {
 		return nil, fmt.Errorf("read failed: %v", err)
@@ -16,12 +16,12 @@ func Recieve(r io.Reader) (any, error) {
 
 	log.Debugf("raw received data: %+v", rawData)
 
-	data, err := proto.Unpack(rawData)
+	msg, err := proto.Unpack(rawData)
 	if err != nil {
 		return nil, fmt.Errorf("unpack failed: %v", err)
 	}
 
-	log.Infof("received data: %+v", data)
+	log.Infof("received data: %v", msg)
 
-	return data, nil
+	return msg, nil
 }

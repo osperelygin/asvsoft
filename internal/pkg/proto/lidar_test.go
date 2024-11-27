@@ -34,6 +34,12 @@ func TestPackLidarDataSuccess(t *testing.T) {
 		out, err := Unpack(packedData)
 		require.NoError(t, err)
 
-		require.Equal(t, data, out.(*LidarData))
+		require.Equal(t, &Message{
+			ModuleID:  LidarModuleID,
+			MsgID:     WritingModeA,
+			Payload:   data,
+			Timestamp: out.Timestamp,
+			CheckSum:  out.CheckSum,
+		}, out)
 	})
 }
