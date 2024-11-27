@@ -26,14 +26,16 @@ func (r *Receiver) Recieve() (*proto.Message, error) {
 
 	log.Debugf("raw received data: %+v", rawData)
 
-	msg, err := proto.Unpack(rawData)
+	var msg proto.Message
+
+	err = msg.Unmarshal(rawData)
 	if err != nil {
 		return nil, fmt.Errorf("unpack failed: %v", err)
 	}
 
 	log.Infof("received data: %v", msg)
 
-	return msg, nil
+	return &msg, nil
 }
 
 func (r *Receiver) Close() error {

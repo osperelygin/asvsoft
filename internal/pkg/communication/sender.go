@@ -32,7 +32,9 @@ func (s *Sender) Send(_ context.Context, data any) error {
 		return nil
 	}
 
-	b, err := proto.Pack(data, s.addr, s.mode)
+	var msg proto.Message
+
+	b, err := msg.Marshal(data, s.addr, s.mode)
 	if err != nil {
 		return fmt.Errorf("cannot pack measure: %w", err)
 	}
@@ -42,8 +44,8 @@ func (s *Sender) Send(_ context.Context, data any) error {
 		return fmt.Errorf("cannot write measures: %w", err)
 	}
 
-	log.Debugf("raw transmitted data: %+v", b)
-	log.Infof("transmitted data: %+v", data)
+	log.Debugf("raw sent data: %+v", b)
+	log.Infof("sent data: %+v", msg)
 
 	return nil
 }

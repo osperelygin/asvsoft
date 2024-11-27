@@ -66,11 +66,13 @@ func Handler(_ *cobra.Command, _ []string) error {
 			log.Errorf("read data from source port failed: %v", err)
 		}
 
-		data, err := proto.Unpack(rawData)
+		var msg proto.Message
+
+		err = msg.Unmarshal(rawData)
 		if err != nil {
 			log.Errorf("unpack failed: %v", err)
 		}
 
-		log.Printf("received data: %+v", data)
+		log.Printf("received data: %+v", msg)
 	}
 }

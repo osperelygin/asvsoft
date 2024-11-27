@@ -70,21 +70,6 @@ const (
 
 var header = []byte{0xFA, 0xFA}
 
-type Message struct {
-	ModuleID  ModuleID
-	MsgID     MessageID
-	Timestamp uint32
-	Payload   any
-	CheckSum  uint8
-}
-
-func (m *Message) String() string {
-	return fmt.Sprintf(
-		"{moduleID:%#X,msgID:%#X,ts:%d,payload:%+v,checksum: %#X}",
-		m.ModuleID, m.MsgID, m.Timestamp, m.Payload, m.CheckSum,
-	)
-}
-
 // Read ищет в потоке принимаемых байтов синхронизовачный заголовок
 // и затем вычитает фрейм протокола. Возвращает полученный фрейм и ошибку.
 func Read(r io.Reader) ([]byte, error) {
@@ -138,12 +123,32 @@ func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 	return rawData, nil
 }
 
-// Pack ...
-func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
+type Message struct {
+	ModuleID    ModuleID
+	MsgID       MessageID
+	Timestamp   uint32
+	PayloadSize uint8
+	Payload     any
+	CheckSum    uint8
+}
+
+func (m Message) String() string {
+	return fmt.Sprintf(
+		"{moduleID:%#X,msgID:%#X,ts:%d,payloadSize:%d,payload:%+v,checksum: %#X}",
+		m.ModuleID, m.MsgID, m.Timestamp, m.PayloadSize, m.Payload, m.CheckSum,
+	)
+}
+
+// Marshal ...
+func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 	var (
 		err     error
 		payload []byte
 	)
+
+	m.ModuleID = moduleID
+	m.MsgID = msgID
+	m.Payload = data
 
 	switch moduleID {
 	case DepthMeterModuleID:
@@ -164,19 +169,19 @@ func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 		return nil, err
 	}
 
-	payloadSize := len(payload)
-	ts := uint32(time.Now().Unix())
+	m.PayloadSize = uint8(len(payload))
+	m.Timestamp = uint32(time.Now().Unix())
 
-	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+payloadSize)))
+	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+int(m.PayloadSize))))
 
-	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), ts, uint8(payloadSize), payload)
+	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), m.Timestamp, m.PayloadSize, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	checkSum := crc8.ChecksumSMBus(enc.Bytes()[headerSize:])
+	m.CheckSum = crc8.ChecksumSMBus(enc.Bytes()[headerSize:])
 
-	err = enc.Encode(checkSum)
+	err = enc.Encode(m.CheckSum)
 	if err != nil {
 		return nil, err
 	}
@@ -184,75 +189,60 @@ func Pack(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 	return enc.Bytes(), nil
 }
 
-// Unpack ...
-func Unpack(data []byte) (*Message, error) {
+// Unmarshal ...
+func (m *Message) Unmarshal(data []byte) error {
 	dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(data)))
 	defer dec.Close()
 
 	// Пропускаем байты синхронизации
 	_, err := dec.Discard(headerSize)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var (
-		rawModuleID, rawMsgID, systemByte uint8
-		ts                                uint32
-		payloadSize                       uint8
+		systemByte      uint8
+		moduleID, msgID uint8
 	)
 
-	err = dec.Decode(&systemByte, &rawModuleID, &rawMsgID, &ts, &payloadSize)
+	err = dec.Decode(&systemByte, &moduleID, &msgID, &m.Timestamp, &m.PayloadSize)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	_ = systemByte
 
-	rawPayload, err := dec.Slice(int(payloadSize))
+	rawPayload, err := dec.Slice(int(m.PayloadSize))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var checkSum uint8
-
-	err = dec.Decode(&checkSum)
+	err = dec.Decode(&m.CheckSum)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if checkSum != crc8.ChecksumSMBus(data[headerSize:len(data)-checkSumSize]) {
-		return nil, fmt.Errorf("check sum missmatch")
+	if m.CheckSum != crc8.ChecksumSMBus(data[headerSize:len(data)-checkSumSize]) {
+		return fmt.Errorf("check sum missmatch")
 	}
 
-	moduleID := ModuleID(rawModuleID)
-	msgID := MessageID(rawMsgID)
+	m.ModuleID = ModuleID(moduleID)
+	m.MsgID = MessageID(msgID)
 
-	var payload any
-
-	switch moduleID {
+	switch m.ModuleID {
 	case DepthMeterModuleID:
-		payload, err = unpackDepthMeterData(rawPayload, msgID)
+		m.Payload, err = unpackDepthMeterData(rawPayload, m.MsgID)
 	case LidarModuleID:
-		payload, err = unpackLidarData(rawPayload, msgID)
+		m.Payload, err = unpackLidarData(rawPayload, m.MsgID)
 	case IMUModuleID:
-		payload, err = unpackIMUData(rawPayload, msgID)
+		m.Payload, err = unpackIMUData(rawPayload, m.MsgID)
 	case GNSSModuleID:
-		payload, err = unpackGNSSData(rawPayload, msgID)
+		m.Payload, err = unpackGNSSData(rawPayload, m.MsgID)
 	case CheckModuleID:
-		payload, err = unpackCheckData(rawPayload, msgID)
+		m.Payload, err = unpackCheckData(rawPayload, m.MsgID)
 	default:
-		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", rawModuleID))
+		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", moduleID))
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return &Message{
-		ModuleID:  moduleID,
-		MsgID:     msgID,
-		Timestamp: ts,
-		Payload:   payload,
-		CheckSum:  checkSum,
-	}, nil
+	return err
 }

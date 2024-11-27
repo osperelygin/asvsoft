@@ -28,18 +28,16 @@ func TestPackLidarDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упакова и распаковка данных", func(t *testing.T) {
-		packedData, err := Pack(data, LidarModuleID, WritingModeA)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(data, LidarModuleID, WritingModeA)
 		require.NoError(t, err)
 
-		out, err := Unpack(packedData)
+		var receivedMsg Message
+
+		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
 
-		require.Equal(t, &Message{
-			ModuleID:  LidarModuleID,
-			MsgID:     WritingModeA,
-			Payload:   data,
-			Timestamp: out.Timestamp,
-			CheckSum:  out.CheckSum,
-		}, out)
+		require.Equal(t, sentMsg, receivedMsg)
 	})
 }

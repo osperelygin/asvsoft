@@ -15,53 +15,47 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		packedData, err := Pack(data, IMUModuleID, WritingModeA)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(&IMUData{
+			Ax: data.Ax, Ay: data.Ay, Az: data.Az,
+			Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
+		}, IMUModuleID, WritingModeA)
 		require.NoError(t, err)
 
-		out, err := Unpack(packedData)
+		var receivedMsg Message
+
+		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
-		require.Equal(t, &Message{
-			ModuleID: IMUModuleID,
-			MsgID:    WritingModeA,
-			Payload: &IMUData{
-				Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
-				Ax: data.Ax, Ay: data.Ay, Az: data.Az,
-			},
-			Timestamp: out.Timestamp,
-			CheckSum:  out.CheckSum,
-		}, out)
+		require.Equal(t, sentMsg, receivedMsg)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		packedData, err := Pack(data, IMUModuleID, WritingModeB)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(data, IMUModuleID, WritingModeB)
 		require.NoError(t, err)
 
-		out, err := Unpack(packedData)
+		var receivedMsg Message
+
+		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
-		require.Equal(t, &Message{
-			ModuleID:  IMUModuleID,
-			MsgID:     WritingModeB,
-			Payload:   data,
-			Timestamp: out.Timestamp,
-			CheckSum:  out.CheckSum,
-		}, out)
+		require.Equal(t, sentMsg, receivedMsg)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		packedData, err := Pack(data, IMUModuleID, WritingModeC)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(&IMUData{
+			Mx: data.Mx, My: data.My, Mz: data.Mz,
+		}, IMUModuleID, WritingModeC)
 		require.NoError(t, err)
 
-		out, err := Unpack(packedData)
+		var receivedMsg Message
+
+		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
-		require.Equal(t, &Message{
-			ModuleID: IMUModuleID,
-			MsgID:    WritingModeC,
-			Payload: &IMUData{
-				Mx: data.Mx, My: data.My, Mz: data.Mz,
-			},
-			Timestamp: out.Timestamp,
-			CheckSum:  out.CheckSum,
-		}, out)
+		require.Equal(t, sentMsg, receivedMsg)
 	})
 }
 
@@ -86,65 +80,58 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		packedData, err := Pack(data, GNSSModuleID, WritingModeA)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(data, GNSSModuleID, WritingModeA)
 		require.NoError(t, err)
 
-		out, err := Unpack(packedData)
+		var receivedMsg Message
+
+		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
-		require.Equal(t, &Message{
-			ModuleID:  GNSSModuleID,
-			MsgID:     WritingModeA,
-			Payload:   data,
-			Timestamp: out.Timestamp,
-			CheckSum:  out.CheckSum,
-		}, out)
+		require.Equal(t, sentMsg, receivedMsg)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		packedData, err := Pack(data, GNSSModuleID, WritingModeB)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(&GNSSData{
+			ITowNAVPOSLLH: uint32(time.Now().Unix()) - 3,
+			Lon:           data.Lon,
+			Lat:           data.Lat,
+			Height:        data.Height,
+			HMSL:          data.HMSL,
+			HAcc:          data.HAcc,
+			VAcc:          data.VAcc,
+		}, GNSSModuleID, WritingModeB)
 		require.NoError(t, err)
 
-		out, err := Unpack(packedData)
+		var receivedMsg Message
+
+		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
-		require.Equal(t, &Message{
-			ModuleID: GNSSModuleID,
-			MsgID:    WritingModeB,
-			Payload: &GNSSData{
-				ITowNAVPOSLLH: data.ITowNAVPOSLLH,
-				Lon:           data.Lon,
-				Lat:           data.Lat,
-				Height:        data.Height,
-				HMSL:          data.HMSL,
-				HAcc:          data.HAcc,
-				VAcc:          data.VAcc,
-			},
-			Timestamp: out.Timestamp,
-			CheckSum:  out.CheckSum,
-		}, out)
+		require.Equal(t, sentMsg, receivedMsg)
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		packedData, err := Pack(data, GNSSModuleID, WritingModeC)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(&GNSSData{
+			VelN:    data.VelN,
+			VelE:    data.VelE,
+			VelD:    data.VelD,
+			Speed:   data.Speed,
+			GSppeed: data.GSppeed,
+			Heading: data.Heading,
+			SAcc:    data.SAcc,
+			CAcc:    data.CAcc,
+		}, GNSSModuleID, WritingModeC)
 		require.NoError(t, err)
 
-		out, err := Unpack(packedData)
+		var receivedMsg Message
+
+		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
-		require.Equal(t, &Message{
-			ModuleID: GNSSModuleID,
-			MsgID:    WritingModeC,
-			Payload: &GNSSData{
-				ITowNAVVELNED: data.ITowNAVVELNED,
-				VelN:          data.VelN,
-				VelE:          data.VelE,
-				VelD:          data.VelD,
-				Speed:         data.Speed,
-				GSppeed:       data.GSppeed,
-				Heading:       data.Heading,
-				SAcc:          data.SAcc,
-				CAcc:          data.CAcc,
-			},
-			Timestamp: out.Timestamp,
-			CheckSum:  out.CheckSum,
-		}, out)
+		require.Equal(t, sentMsg, receivedMsg)
 	})
 }

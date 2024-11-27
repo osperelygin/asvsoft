@@ -9,18 +9,20 @@ import (
 
 func TestRead(t *testing.T) {
 	t.Run("успешное чтение фрейма протокола из потока байтов", func(t *testing.T) {
-		packedData, err := Pack(depthMeterData, DepthMeterModuleID, WritingModeA)
+		var sentMsg Message
+
+		msgBytes, err := sentMsg.Marshal(depthMeterData, DepthMeterModuleID, WritingModeA)
 		require.NoError(t, err)
 
 		noiseBytes := []byte{0x01, 0x00, 0xFF, header[0], 0x05, 0x06}
 
-		rawData := make([]byte, 0, len(packedData)+len(noiseBytes))
+		rawData := make([]byte, 0, len(msgBytes)+len(noiseBytes))
 		rawData = append(rawData, noiseBytes...)
-		rawData = append(rawData, packedData...)
+		rawData = append(rawData, msgBytes...)
 
 		b, err := Read(bytes.NewReader(rawData))
 		require.NoError(t, err)
-		require.Equal(t, packedData, b)
+		require.Equal(t, msgBytes, b)
 	})
 
 	t.Run("отсутствие фрейма в потоке байтов", func(t *testing.T) {
@@ -33,13 +35,15 @@ func TestRead(t *testing.T) {
 }
 
 func BenchmarkRead(b *testing.B) {
-	packedData, _ := Pack(depthMeterData, DepthMeterModuleID, WritingModeA)
+	var sentMsg Message
+
+	msgBytes, _ := sentMsg.Marshal(depthMeterData, DepthMeterModuleID, WritingModeA)
 
 	noiseBytes := []byte{0x01, 0x00, 0xFF, header[0], header[1], 0x05, 0x06}
 
-	rawData := make([]byte, 0, len(packedData)+len(noiseBytes))
+	rawData := make([]byte, 0, len(msgBytes)+len(noiseBytes))
 	rawData = append(rawData, noiseBytes...)
-	rawData = append(rawData, packedData...)
+	rawData = append(rawData, msgBytes...)
 
 	b.ResetTimer()
 
