@@ -21,19 +21,19 @@ func NewReceiver(rc io.ReadCloser) *Receiver {
 func (r *Receiver) Recieve() (*proto.Message, error) {
 	rawData, err := proto.Read(r.rc)
 	if err != nil {
-		return nil, fmt.Errorf("read failed: %v", err)
+		return nil, fmt.Errorf("read msg failed: %v", err)
 	}
 
-	log.Debugf("raw received data: %+v", rawData)
+	log.Debugf("raw received msg: %+v", rawData)
 
 	var msg proto.Message
 
 	err = msg.Unmarshal(rawData)
 	if err != nil {
-		return nil, fmt.Errorf("unpack failed: %v", err)
+		return nil, fmt.Errorf("unmarshal msg failed: %v", err)
 	}
 
-	log.Infof("received data: %v", msg)
+	log.Infof("received msg: %v", msg)
 
 	return &msg, nil
 }

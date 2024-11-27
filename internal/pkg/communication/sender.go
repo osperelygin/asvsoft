@@ -36,7 +36,7 @@ func (s *Sender) Send(_ context.Context, data any) error {
 
 	b, err := msg.Marshal(data, s.addr, s.mode)
 	if err != nil {
-		return fmt.Errorf("cannot pack measure: %w", err)
+		return fmt.Errorf("cannot marshal msg: %w", err)
 	}
 
 	_, err = s.w.Write(b)
@@ -44,8 +44,8 @@ func (s *Sender) Send(_ context.Context, data any) error {
 		return fmt.Errorf("cannot write measures: %w", err)
 	}
 
-	log.Debugf("raw sent data: %+v", b)
-	log.Infof("sent data: %+v", msg)
+	log.Debugf("raw sent msg: %+v", b)
+	log.Infof("sent msg: %+v", msg)
 
 	return nil
 }
