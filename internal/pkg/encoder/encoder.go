@@ -32,6 +32,8 @@ func (enc *Encoder) Encode(values ...any) error {
 			err = enc.U24(v)
 		case uint32:
 			err = enc.U32(v)
+		case uint64:
+			err = enc.U64(v)
 		case int16:
 			err = enc.I16(v)
 		case int32:
@@ -105,6 +107,11 @@ func (enc *Encoder) U24(v common.Uint24) error {
 
 // U32 writes two bytes to the stream
 func (enc *Encoder) U32(v uint32) error {
+	return encodeBytes(enc, v)
+}
+
+// U64 writes two bytes to the stream
+func (enc *Encoder) U64(v uint64) error {
 	return encodeBytes(enc, v)
 }
 

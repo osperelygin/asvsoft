@@ -6,7 +6,7 @@ import (
 )
 
 type ubytes interface {
-	uint8 | uint16 | common.Uint24 | uint32 | int32
+	uint8 | uint16 | common.Uint24 | uint32 | uint64
 }
 
 type sbytes interface {
@@ -21,6 +21,8 @@ func bytesOf(untyped any) int {
 		return 3
 	case int32, uint32:
 		return 4
+	case uint64:
+		return 8
 	default:
 		panic(fmt.Sprintf("bytesOf is not implemented for this type (%T)", v))
 	}

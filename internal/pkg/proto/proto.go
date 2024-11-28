@@ -44,7 +44,7 @@ const (
 	sytemByteSize    = 1
 	moduleIDSize     = 1
 	msgIDSize        = 1
-	timestampSize    = 4
+	timestampSize    = 8
 	payloadBytesSize = 1
 	checkSumSize     = 1
 )
@@ -126,7 +126,7 @@ func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 type Message struct {
 	ModuleID    ModuleID
 	MsgID       MessageID
-	Timestamp   uint32
+	Timestamp   uint64
 	PayloadSize uint8
 	Payload     any
 	CheckSum    uint8
@@ -170,7 +170,7 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 	}
 
 	m.PayloadSize = uint8(len(payload))
-	m.Timestamp = uint32(time.Now().Unix())
+	m.Timestamp = uint64(time.Now().UnixMilli())
 
 	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+int(m.PayloadSize))))
 

@@ -86,6 +86,8 @@ func (dec *Decoder) Decode(values ...any) (err error) {
 			*v, err = dec.U24()
 		case *uint32:
 			*v, err = dec.U32()
+		case *uint64:
+			*v, err = dec.U64()
 		case *int32:
 			*v, err = dec.I32()
 		case *int16:
@@ -189,6 +191,11 @@ func (dec *Decoder) U24() (common.Uint24, error) {
 // U32 reads and returns four bytes
 func (dec *Decoder) U32() (uint32, error) {
 	return decodeBytes[uint32](dec)
+}
+
+// U64 reads and returns 8 bytes
+func (dec *Decoder) U64() (uint64, error) {
+	return decodeBytes[uint64](dec)
 }
 
 func (dec *Decoder) I16() (int16, error) {
