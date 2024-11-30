@@ -71,7 +71,7 @@ func (l *Lidar) measure() (*proto.LidarData, error) {
 
 	frame := l.frameBuff[start:end]
 
-	log.Debugf("[lidar] read frame: %v", frame)
+	log.Debugf("raw read measure: %v", frame)
 
 	if frame[1] != verLenByte {
 		return nil, fmt.Errorf("unexpected ver len byte: %v", verLenByte)
