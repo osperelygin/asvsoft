@@ -8,8 +8,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
+	"sync/atomic"
 	"time"
 )
+
+func init() {
+	startStamp.Store(time.Now().UnixMilli())
+}
 
 type ModuleID uint8
 
@@ -44,7 +50,7 @@ const (
 	sytemByteSize    = 1
 	moduleIDSize     = 1
 	msgIDSize        = 1
-	timestampSize    = 8
+	systemTimeSize   = 4
 	payloadBytesSize = 1
 	checkSumSize     = 1
 )
@@ -53,7 +59,7 @@ const serviceBytesSize = headerSize +
 	sytemByteSize +
 	moduleIDSize +
 	msgIDSize +
-	timestampSize +
+	systemTimeSize +
 	payloadBytesSize +
 	checkSumSize
 
@@ -123,10 +129,11 @@ func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 	return rawData, nil
 }
 
+// Message contain msg meta information and payload
 type Message struct {
 	ModuleID    ModuleID
 	MsgID       MessageID
-	Timestamp   uint64
+	SystemTime  uint32
 	PayloadSize uint8
 	Payload     any
 	CheckSum    uint8
@@ -135,7 +142,7 @@ type Message struct {
 func (m Message) String() string {
 	return fmt.Sprintf(
 		"{moduleID:%#X,msgID:%#X,ts:%d,payloadSize:%d,payload:%+v,checksum: %#X}",
-		m.ModuleID, m.MsgID, m.Timestamp, m.PayloadSize, m.Payload, m.CheckSum,
+		m.ModuleID, m.MsgID, m.SystemTime, m.PayloadSize, m.Payload, m.CheckSum,
 	)
 }
 
@@ -170,11 +177,12 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 	}
 
 	m.PayloadSize = uint8(len(payload))
-	m.Timestamp = uint64(time.Now().UnixMilli())
+
+	m.SystemTime = systemTime()
 
 	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+int(m.PayloadSize))))
 
-	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), m.Timestamp, m.PayloadSize, payload)
+	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), m.SystemTime, m.PayloadSize, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +213,7 @@ func (m *Message) Unmarshal(data []byte) error {
 		moduleID, msgID uint8
 	)
 
-	err = dec.Decode(&systemByte, &moduleID, &msgID, &m.Timestamp, &m.PayloadSize)
+	err = dec.Decode(&systemByte, &moduleID, &msgID, &m.SystemTime, &m.PayloadSize)
 	if err != nil {
 		return err
 	}
@@ -245,4 +253,29 @@ func (m *Message) Unmarshal(data []byte) error {
 	}
 
 	return err
+}
+
+var startStamp atomic.Int64
+
+func systemTime() uint32 {
+	now := time.Now().UnixMilli()
+	start := startStamp.Load()
+
+	systemTime := now - start
+	if systemTime <= math.MaxUint32 {
+		return uint32(systemTime)
+	}
+
+	if startStamp.CompareAndSwap(start, now) {
+		return 0
+	}
+
+	start = startStamp.Load()
+
+	systemTime = now - start
+	if systemTime < 0 {
+		return 0
+	}
+
+	return uint32(systemTime)
 }
