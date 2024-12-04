@@ -4,6 +4,7 @@ import (
 	"asvsoft/internal/pkg/proto"
 	"fmt"
 	"io"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -24,6 +25,7 @@ func (s *Syncer) WithReadWriter(rw io.ReadWriter) *Syncer {
 
 func (s *Syncer) Sync() error {
 	if s.rw == nil {
+		log.Traceln("skipping sync: rw == nil")
 		return nil
 	}
 
@@ -34,13 +36,19 @@ func (s *Syncer) Sync() error {
 		return fmt.Errorf("cannot marshal msg: %w", err)
 	}
 
+	log.Traceln("writing sync request...")
+
 	_, err = s.rw.Write(b)
 	if err != nil {
 		return fmt.Errorf("cannot write measures: %w", err)
 	}
 
 	log.Debugf("raw sync request: %+v", b)
-	log.Infof("sync request: %+v", req)
+	log.Debugf("sync request: %+v", req)
+
+	time.Sleep(500 * time.Millisecond)
+
+	log.Traceln("reading sync response...")
 
 	rawResp, err := proto.Read(s.rw)
 	if err != nil {
@@ -55,7 +63,7 @@ func (s *Syncer) Sync() error {
 	}
 
 	log.Debugf("raw sync response: %+v", rawResp)
-	log.Infof("sync response: %+v", resp)
+	log.Debugf("sync response: %+v", resp)
 
 	if resp.MsgID != proto.SyncResponse {
 		return fmt.Errorf("unexpected msgID: %#X", resp.MsgID)
@@ -64,15 +72,18 @@ func (s *Syncer) Sync() error {
 	startStamp := resp.Payload.(uint32)
 	proto.SetStartStamp(startStamp)
 
-	log.Debugf("synced system time, start stamp: %d (ms)", startStamp*1000)
+	log.Infof("time was synced, start stamp: %d", startStamp)
 
 	return nil
 }
 
 func (s *Syncer) Serve() error {
 	if s.rw == nil {
+		log.Traceln("skipping serve: rw == nil")
 		return nil
 	}
+
+	log.Traceln("reading sync request...")
 
 	rawReq, err := proto.Read(s.rw)
 	if err != nil {
@@ -87,7 +98,7 @@ func (s *Syncer) Serve() error {
 	}
 
 	log.Debugf("raw sync request: %+v", rawReq)
-	log.Infof("sync request: %+v", req)
+	log.Debugf("sync request: %+v", req)
 
 	if req.MsgID != proto.SyncRequest {
 		return fmt.Errorf("unexpected msgID: %#X", req.MsgID)
@@ -100,13 +111,17 @@ func (s *Syncer) Serve() error {
 		return fmt.Errorf("cannot marshal resp: %w", err)
 	}
 
+	time.Sleep(time.Second)
+
+	log.Traceln("writing sync response...")
+
 	_, err = s.rw.Write(b)
 	if err != nil {
 		return fmt.Errorf("cannot write resp: %w", err)
 	}
 
 	log.Debugf("raw sync response: %+v", b)
-	log.Infof("sync response: %+v", resp)
+	log.Debugf("sync response: %+v", resp)
 
 	return nil
 }

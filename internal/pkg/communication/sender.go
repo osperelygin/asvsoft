@@ -94,6 +94,7 @@ LOOP:
 
 func (s *Sender) Send(_ context.Context, data any) error {
 	if s.wc == nil {
+		log.Debugln("skipping send: wc == nil")
 		return nil
 	}
 

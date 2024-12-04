@@ -34,6 +34,13 @@ func Handler(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("cannot open serial port %q: %v", controllerConfig.Port, err)
 	}
 
+	log.Debugln("waiting sync request...")
+
+	err = communication.NewSyncer(proto.ControlModuleID).WithReadWriter(srcPort).Serve()
+	if err != nil {
+		return fmt.Errorf("cannot sync: %v", err)
+	}
+
 	r := communication.NewReceiver(srcPort)
 	defer func() {
 		err = r.Close()
@@ -42,10 +49,7 @@ func Handler(_ *cobra.Command, _ []string) error {
 		}
 	}()
 
-	err = communication.NewSyncer(proto.ControlModuleID).WithReadWriter(srcPort).Serve()
-	if err != nil {
-		return fmt.Errorf("cannot sync: %v", err)
-	}
+	log.Debugln("receiving messages...")
 
 	for {
 		msg, err := r.Recieve()
