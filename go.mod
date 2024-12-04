@@ -9,7 +9,6 @@ require (
 	github.com/daedaleanai/ublox v0.0.0-20240403151839-d5c9b0a60ad7
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
-	github.com/stianeikeland/go-rpio/v4 v4.6.0
 	github.com/stretchr/testify v1.9.0
 	go.bug.st/serial v1.6.2
 )

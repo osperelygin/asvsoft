@@ -8,14 +8,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"math"
-	"sync/atomic"
 	"time"
 )
-
-func init() {
-	startStamp.Store(time.Now().UnixMilli())
-}
 
 type ModuleID uint8
 
@@ -43,6 +37,11 @@ const (
 	WritingModeA
 	WritingModeB
 	WritingModeC
+)
+
+const (
+	SyncRequest MessageID = 0xFA + iota
+	SyncResponse
 )
 
 const (
@@ -149,40 +148,40 @@ func (m Message) String() string {
 // Marshal ...
 func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
 	var (
-		err     error
-		payload []byte
+		err        error
+		rawPayload []byte
 	)
 
 	m.ModuleID = moduleID
 	m.MsgID = msgID
 	m.Payload = data
 
-	switch moduleID {
-	case DepthMeterModuleID:
-		payload, err = packDepthMeterData(data.(*DepthMeterData), msgID)
-	case LidarModuleID:
-		payload, err = packLidarData(data.(*LidarData), msgID)
-	case IMUModuleID:
-		payload, err = packIMUData(data.(*IMUData), msgID)
-	case GNSSModuleID:
-		payload, err = packGNSSData(data.(*GNSSData), msgID)
-	case CheckModuleID:
-		payload, err = packCheckData(data.(*CheckData), msgID)
+	switch msgID {
+	case SyncRequest:
+		// just chill
+	case SyncResponse:
+		enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, 4)))
+
+		err = enc.Encode(data.(uint32))
+		if err != nil {
+			return nil, err
+		}
+
+		rawPayload = enc.Bytes()
 	default:
-		panic(fmt.Sprintf("Pack is not implemented for this addr (%x)", moduleID))
+		rawPayload, err = m.pack(data)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	m.PayloadSize = uint8(len(payload))
-
+	m.PayloadSize = uint8(len(rawPayload))
 	m.SystemTime = systemTime()
 
 	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+int(m.PayloadSize))))
 
-	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), m.SystemTime, m.PayloadSize, payload)
+	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), m.SystemTime, m.PayloadSize, rawPayload)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +194,30 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 	}
 
 	return enc.Bytes(), nil
+}
+
+func (m *Message) pack(data any) ([]byte, error) {
+	var (
+		rawPayload []byte
+		err        error
+	)
+
+	switch m.ModuleID {
+	case DepthMeterModuleID:
+		rawPayload, err = packDepthMeterData(data.(*DepthMeterData), m.MsgID)
+	case LidarModuleID:
+		rawPayload, err = packLidarData(data.(*LidarData), m.MsgID)
+	case IMUModuleID:
+		rawPayload, err = packIMUData(data.(*IMUData), m.MsgID)
+	case GNSSModuleID:
+		rawPayload, err = packGNSSData(data.(*GNSSData), m.MsgID)
+	case CheckModuleID:
+		rawPayload, err = packCheckData(data.(*CheckData), m.MsgID)
+	default:
+		panic(fmt.Sprintf("Pack is not implemented for this addr (%x)", m.ModuleID))
+	}
+
+	return rawPayload, err
 }
 
 // Unmarshal ...
@@ -237,6 +260,23 @@ func (m *Message) Unmarshal(data []byte) error {
 	m.ModuleID = ModuleID(moduleID)
 	m.MsgID = MessageID(msgID)
 
+	switch m.MsgID {
+	case SyncRequest:
+		// just chill
+	case SyncResponse:
+		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(rawPayload)))
+		defer d.Close()
+		m.Payload, err = d.U32()
+	default:
+		err = m.unpack(rawPayload)
+	}
+
+	return err
+}
+
+func (m *Message) unpack(rawPayload []byte) error {
+	var err error
+
 	switch m.ModuleID {
 	case DepthMeterModuleID:
 		m.Payload, err = unpackDepthMeterData(rawPayload, m.MsgID)
@@ -249,33 +289,54 @@ func (m *Message) Unmarshal(data []byte) error {
 	case CheckModuleID:
 		m.Payload, err = unpackCheckData(rawPayload, m.MsgID)
 	default:
-		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", moduleID))
+		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", m.ModuleID))
 	}
 
 	return err
 }
 
-var startStamp atomic.Int64
+var startStamp = time.Now().UnixMilli()
+
+func SetStartStamp(stamp uint32) {
+	startStamp = int64(stamp) * 1000
+}
+
+func GetStartStamp() uint32 {
+	return uint32(startStamp / 1000)
+}
 
 func systemTime() uint32 {
-	now := time.Now().UnixMilli()
-	start := startStamp.Load()
-
-	systemTime := now - start
-	if systemTime <= math.MaxUint32 {
-		return uint32(systemTime)
-	}
-
-	if startStamp.CompareAndSwap(start, now) {
-		return 0
-	}
-
-	start = startStamp.Load()
-
-	systemTime = now - start
-	if systemTime < 0 {
-		return 0
-	}
-
-	return uint32(systemTime)
+	return uint32(time.Now().UnixMilli() - startStamp)
 }
+
+// lock-free implementation for updating startStamp when now-startStamp > math.Uint32
+//
+//
+// func init() {
+// 	startStamp.Store(time.Now().UnixMilli())
+// }
+
+// var startStamp atomic.Int64
+
+// func systemTime() uint32 {
+// 	now := time.Now().UnixMilli()
+// 	start := startStamp.Load()
+
+// 	systemTime := now - start
+// 	if systemTime <= math.MaxUint32 {
+// 		return uint32(systemTime)
+// 	}
+
+// 	if startStamp.CompareAndSwap(start, now) {
+// 		return 0
+// 	}
+
+// 	start = startStamp.Load()
+
+// 	systemTime = now - start
+// 	if systemTime < 0 {
+// 		return 0
+// 	}
+
+// 	return uint32(systemTime)
+// }

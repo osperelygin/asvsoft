@@ -4,6 +4,7 @@ package controller
 import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/pkg/communication"
+	"asvsoft/internal/pkg/proto"
 	serialport "asvsoft/internal/pkg/serial-port"
 	"fmt"
 
@@ -40,6 +41,11 @@ func Handler(_ *cobra.Command, _ []string) error {
 			log.Errorf("cannot close receiver: %v", err)
 		}
 	}()
+
+	err = communication.NewSyncer(proto.ControlModuleID).WithReadWriter(srcPort).Serve()
+	if err != nil {
+		return fmt.Errorf("cannot sync: %v", err)
+	}
 
 	for {
 		msg, err := r.Recieve()
