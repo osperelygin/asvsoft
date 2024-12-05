@@ -67,7 +67,7 @@ func (n *NeoM8t) configurate(msgIDList ...byte) error {
 			return fmt.Errorf("cannot encode cfg msg: %w", err)
 		}
 
-		log.Infof("writting cfg msg: %v", b)
+		log.Debugf("raw sent cfg msg: %v", b)
 
 		_, err = n.r.Write(b)
 		if err != nil {
