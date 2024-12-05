@@ -18,7 +18,15 @@ Depth meter data reading:
 
 Sense HAT data reading:
 
-`asvsoft sense-hat --dst /dev/ttyAMA5 --loglevel=debug --period=100m`
+`asvsoft sense-hat --period=100ms --loglevel=debug --dst /dev/ttyAMA5 --dst-baudrate 9600`
+
+Lidar data reading:
+
+`asvsoft lidar --port /dev/ttyUSB0 --baudrate 921600 --dst /dev/ttyAMA5 --dst-baudrate 9600 --loglevel=debug`
+
+Neo-M8t data reading:
+
+`asvsoft neo-m8t --port /dev/ttyS0 --baudrate 9600 --transmitting-disabled`
 
 Controller data reading:
 
