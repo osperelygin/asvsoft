@@ -93,16 +93,16 @@ LOOP:
 }
 
 func (s *Sender) Send(_ context.Context, data any) error {
-	if s.wc == nil {
-		log.Debugln("skipping send: wc == nil")
-		return nil
-	}
-
 	var msg proto.Message
 
 	b, err := msg.Marshal(data, s.addr, s.mode)
 	if err != nil {
 		return fmt.Errorf("cannot marshal msg: %w", err)
+	}
+
+	if s.wc == nil {
+		log.Debugf("s.wc == nil: mock sending msg: %+v", msg)
+		return nil
 	}
 
 	_, err = s.wc.Write(b)

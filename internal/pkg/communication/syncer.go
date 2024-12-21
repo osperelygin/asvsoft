@@ -4,6 +4,8 @@ import (
 	"asvsoft/internal/pkg/proto"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -25,7 +27,22 @@ func (s *Syncer) WithReadWriter(rw io.ReadWriter) *Syncer {
 
 func (s *Syncer) Sync() error {
 	if s.rw == nil {
-		log.Traceln("skipping sync: rw == nil")
+		log.Traceln("rw == nil: try getting START_STAMP env var")
+
+		startStampStr := os.Getenv("START_STAMP")
+		if startStampStr == "" {
+			log.Tracef("START_STAMP is not set, use CLI start stamp: %d", proto.GetStartStamp())
+			return nil
+		}
+
+		startStamp, err := strconv.ParseInt(startStampStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("cannot parse start stamp %q: %w", startStampStr, err)
+		}
+
+		log.Tracef("start stamp set to %d", startStamp)
+		proto.SetStartStamp(uint32(startStamp))
+
 		return nil
 	}
 
