@@ -60,5 +60,10 @@ func Cmd() *cobra.Command {
 		128, "диапазон измерений гироскопа в град/с",
 	)
 
+	cmd.Flags().BoolVar(
+		&cfg.Imu.Gyr.RemoveOffset, "remove-offset",
+		true, "флаг удаления постоянного сдвига гироскопов",
+	)
+
 	return cmd
 }

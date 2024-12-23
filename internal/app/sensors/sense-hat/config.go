@@ -28,11 +28,12 @@ type ImuConfig struct {
 }
 
 type SensorConfig struct {
-	Enable   bool
-	Order    float32
-	Range    int
-	orderMap map[float32]byte
-	rangeMap map[int]rangeConfig
+	Enable       bool
+	Order        float32
+	Range        int
+	RemoveOffset bool
+	orderMap     map[float32]byte
+	rangeMap     map[int]rangeConfig
 }
 
 type rangeConfig struct {

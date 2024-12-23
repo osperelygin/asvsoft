@@ -5,6 +5,7 @@ import (
 	"asvsoft/internal/pkg/proto"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -12,6 +13,12 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/d2r2/go-i2c"
+)
+
+const (
+	offsetCalculatingTries = 1024
+	offsetCalculatingSleep = 16 * time.Millisecond
+	wrongMeasureThreshold  = 3 << 13
 )
 
 type configCmd struct {
@@ -24,6 +31,9 @@ type IMU struct {
 	config      *ImuConfig
 	inertialBus *i2c.I2C
 	magnBus     *i2c.I2C
+	gxOffset    int16
+	gyOffset    int16
+	gzOffset    int16
 }
 
 func NewIMU(config *ImuConfig) (*IMU, error) {
@@ -57,6 +67,29 @@ func NewIMU(config *ImuConfig) (*IMU, error) {
 		return nil, err
 	}
 
+	if config.Gyr.RemoveOffset {
+		var gx, gy, gz int
+
+		for i := 0; i < offsetCalculatingTries; i++ {
+			m, err := imu.measure()
+			if err != nil {
+				return nil, fmt.Errorf("cannot remove offset: %w", err)
+			}
+
+			gx += int(m.Gx)
+			gy += int(m.Gy)
+			gz += int(m.Gz)
+
+			time.Sleep(offsetCalculatingSleep)
+		}
+
+		imu.gxOffset = int16(gx / offsetCalculatingTries)
+		imu.gyOffset = int16(gy / offsetCalculatingTries)
+		imu.gzOffset = int16(gz / offsetCalculatingTries)
+
+		log.Infof("gyro offset: x=%d, y=%d, z=%d", imu.gxOffset, imu.gyOffset, imu.gzOffset)
+	}
+
 	imu.magnBus, err = initMagnSensor(config)
 	if err != nil {
 		return nil, err
@@ -70,30 +103,33 @@ func (imu *IMU) Measure(_ context.Context) (any, error) {
 	return imu.measure()
 }
 
+// ErrWrongMeasure ...
+var ErrWrongMeasure = errors.New("wrong measure")
+
 func (imu *IMU) measure() (*proto.IMUData, error) {
 	b, err := imu.RawMeasure()
 	if err != nil {
 		return nil, err
 	}
 
-	measure := &proto.IMUData{}
+	m := &proto.IMUData{}
 	decoder := encoder.NewDecoder(io.NopCloser(bytes.NewBuffer(b)))
 
 	switch imu.config.Mode {
 	case FullMode:
-		measure.AccFactor = int16(imu.config.Acc.rangeSensitivity())
-		measure.GyrFactor = int16(imu.config.Gyr.rangeSensitivity())
+		m.AccFactor = int16(imu.config.Acc.rangeSensitivity())
+		m.GyrFactor = int16(imu.config.Gyr.rangeSensitivity())
 		err = decoder.Decode(
-			&measure.Ax, &measure.Ay, &measure.Az,
-			&measure.Gx, &measure.Gy, &measure.Gz,
-			&measure.Mx, &measure.My, &measure.Mz,
+			&m.Ax, &m.Ay, &m.Az,
+			&m.Gx, &m.Gy, &m.Gz,
+			&m.Mx, &m.My, &m.Mz,
 		)
 	case IntertialMode:
-		measure.AccFactor = int16(imu.config.Acc.rangeSensitivity())
-		measure.GyrFactor = int16(imu.config.Gyr.rangeSensitivity())
+		m.AccFactor = int16(imu.config.Acc.rangeSensitivity())
+		m.GyrFactor = int16(imu.config.Gyr.rangeSensitivity())
 		err = decoder.Decode(
-			&measure.Ax, &measure.Ay, &measure.Az,
-			&measure.Gx, &measure.Gy, &measure.Gz,
+			&m.Ax, &m.Ay, &m.Az,
+			&m.Gx, &m.Gy, &m.Gz,
 		)
 	}
 
@@ -101,7 +137,22 @@ func (imu *IMU) measure() (*proto.IMUData, error) {
 		return nil, err
 	}
 
-	return measure, nil
+	// handle "wrong" measures
+	if m.Gx > wrongMeasureThreshold ||
+		m.Gy > wrongMeasureThreshold ||
+		m.Gz > wrongMeasureThreshold {
+		return m, fmt.Errorf("%w: (%d, %d, %d)", ErrWrongMeasure, m.Gx, m.Gy, m.Gz)
+	}
+
+	imu.removeGyroOffset(m)
+
+	return m, nil
+}
+
+func (imu *IMU) removeGyroOffset(data *proto.IMUData) {
+	data.Gx -= imu.gxOffset
+	data.Gy -= imu.gyOffset
+	data.Gz -= imu.gzOffset
 }
 
 func (imu *IMU) RawMeasure() ([]byte, error) {
