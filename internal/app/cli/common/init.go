@@ -2,6 +2,7 @@ package common
 
 import (
 	"asvsoft/internal/app/config"
+	"asvsoft/internal/app/sensors/camera"
 	"asvsoft/internal/app/sensors/check"
 	depthmeter "asvsoft/internal/app/sensors/depth-meter"
 	"asvsoft/internal/app/sensors/lidar"
@@ -23,6 +24,7 @@ const (
 	LidarMode
 	NeoM8tMode
 	ImuMode
+	CameraMode
 	NavMode
 	CheckMode
 )
@@ -35,7 +37,7 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 		err     error
 	)
 
-	if mode != ImuMode && mode != CheckMode {
+	if mode != ImuMode && mode != CheckMode && mode != CameraMode {
 		srcPort, err = serialport.New(cfg.SrcSerialPort)
 		if err != nil {
 			return nil, nil, err
@@ -80,6 +82,18 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 	case CheckMode:
 		addr = proto.CheckModuleID
 		m = check.New()
+	case CameraMode:
+		addr = proto.CameraModuleID
+		// hardcode
+		m, err = camera.NewCamera([][3]int16{
+			{1090, -12711, -16544},
+			{1087, -12768, -16545},
+			{1085, -12669, -16545},
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+
 	default:
 		panic(fmt.Sprintf("unknown run mode: %q", addr))
 	}

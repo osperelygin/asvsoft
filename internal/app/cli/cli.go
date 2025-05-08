@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"asvsoft/internal/app/cli/camera"
 	"asvsoft/internal/app/cli/check"
 	"asvsoft/internal/app/cli/controller"
 	depthmeter "asvsoft/internal/app/cli/depth-meter"
@@ -39,6 +40,7 @@ func RootCmd() *cobra.Command {
 		neom8t.Cmd(),
 		sensehat.Cmd(),
 		check.Cmd(),
+		camera.Cmd(),
 	)
 
 	return &rootCmd

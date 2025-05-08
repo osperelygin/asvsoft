@@ -26,6 +26,7 @@ const (
 	NavigationModuleID
 	DepthMeterModuleID
 	LidarModuleID
+	CameraModuleID
 )
 
 type MessageID uint8
@@ -211,6 +212,8 @@ func (m *Message) pack(data any) ([]byte, error) {
 		rawPayload, err = packIMUData(data.(*IMUData), m.MsgID)
 	case GNSSModuleID:
 		rawPayload, err = packGNSSData(data.(*GNSSData), m.MsgID)
+	case CameraModuleID:
+		rawPayload, err = packCameraData(data.(*CameraData), m.MsgID)
 	case CheckModuleID:
 		rawPayload, err = packCheckData(data.(*CheckData), m.MsgID)
 	default:
@@ -286,6 +289,8 @@ func (m *Message) unpack(rawPayload []byte) error {
 		m.Payload, err = unpackIMUData(rawPayload, m.MsgID)
 	case GNSSModuleID:
 		m.Payload, err = unpackGNSSData(rawPayload, m.MsgID)
+	case CameraModuleID:
+		m.Payload, err = unpackCameraData(rawPayload, m.MsgID)
 	case CheckModuleID:
 		m.Payload, err = unpackCheckData(rawPayload, m.MsgID)
 	default:
