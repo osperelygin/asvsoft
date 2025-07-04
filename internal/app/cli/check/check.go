@@ -15,7 +15,7 @@ var (
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check",
-		Short: "Режим чтения данных с последовательного порта",
+		Short: "Тестовый модуль",
 		RunE:  common.Handler(&cfg, common.CheckMode),
 	}
 	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)

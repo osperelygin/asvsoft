@@ -15,7 +15,7 @@ var (
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "camera",
-		Short: "Обработка и передача данных модуля камеры",
+		Short: "Модуль обработки данных камеры",
 		RunE:  common.Handler(&cfg, common.CameraMode),
 	}
 

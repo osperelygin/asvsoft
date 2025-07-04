@@ -26,7 +26,7 @@ var (
 func Cmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "navigation",
-		Short: "блок навигации",
+		Short: "Модуль навигации",
 		RunE:  Handler,
 	}
 	srcCfg = common.AddSerialSourceFlags(&cmd)

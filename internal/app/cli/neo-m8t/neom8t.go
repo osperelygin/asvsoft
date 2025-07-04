@@ -16,7 +16,7 @@ var (
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "neo-m8t",
-		Short: "Режим чтения данных с последовательного порта",
+		Short: "Модуль обработки данных ГНСС",
 		RunE:  common.Handler(&cfg, common.NeoM8tMode),
 	}
 	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)

@@ -20,7 +20,7 @@ var (
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "controller",
-		Short: "Режим чтения данных с последовательного порта",
+		Short: "Контроллер управления",
 		RunE:  Handler,
 	}
 	controllerConfig = common.AddSerialSourceFlags(cmd)

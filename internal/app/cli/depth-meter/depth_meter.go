@@ -15,7 +15,7 @@ var (
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "depthmeter",
-		Short: "Режим чтения данных с последовательного порта",
+		Short: "Модуль обработки данных измерителя глубины",
 		RunE:  common.Handler(&cfg, common.DepthMeterMode),
 	}
 	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)

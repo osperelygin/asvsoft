@@ -15,7 +15,7 @@ var (
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "lidar",
-		Short: "Режим чтения данных с последовательного порта",
+		Short: "Модуль обработки данных лидара",
 		RunE:  common.Handler(&cfg, common.LidarMode),
 	}
 	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)
