@@ -20,15 +20,19 @@ import (
 type RunMode int
 
 const (
-	DepthMeterMode RunMode = iota
+	DepthMeterMode RunMode = iota + 1
 	LidarMode
 	NeoM8tMode
 	ImuMode
 	CameraMode
 	NavMode
+	RegistratorMode
 	CheckMode
 )
 
+// Init общая функция инициализации модуля камеры, лидара, ИНС и ГНСС, измерителя глубины ,
+// модуля навигации и модуля проверки. Требуемые для работы модуля порты-источники и
+// порты-назначения обернуты в объекте sender'a.
 func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communication.Syncer, error) {
 	cfg := config.FromContext(ctx)
 
@@ -38,7 +42,7 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 	)
 
 	if mode != ImuMode && mode != CheckMode && mode != CameraMode {
-		srcPort, err = serialport.New(cfg.SrcSerialPort)
+		srcPort, err = serialport.New(cfg.SensorSerialPort)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -101,8 +105,8 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 	sndr := communication.NewSender(m, addr, proto.WritingModeA)
 	sncr := communication.NewSyncer(addr)
 
-	if !cfg.DstSerialPort.TransmittingDisabled {
-		dstPort, err := serialport.New(cfg.DstSerialPort)
+	if !cfg.ControllerSerialPort.TransmittingDisabled {
+		dstPort, err := serialport.New(cfg.ControllerSerialPort)
 		if err != nil {
 			return nil, nil, err
 		}

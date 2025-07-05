@@ -10,6 +10,10 @@ import (
 	"go.bug.st/serial"
 )
 
+var (
+	ErrReadTimeout = errors.New("read timeout")
+)
+
 type Wrapper struct {
 	serial.Port
 	logger logger.Logger
@@ -17,10 +21,17 @@ type Wrapper struct {
 }
 
 type Config struct {
-	Port                 string
-	Timeout              time.Duration
-	BaudRate             int
+	Port                 string        `yaml:"port" mapstructure:"port"`
+	BaudRate             int           `yaml:"baudrate" mapstructure:"baudrate"`
+	Timeout              time.Duration `yaml:"timeout" mapstructure:"timeout"`
 	TransmittingDisabled bool
+}
+
+func (c Config) String() string {
+	return fmt.Sprintf(
+		"port: %q, baudrate: %d, timeout: %v, transmitting_disabled: %v",
+		c.Port, c.BaudRate, c.Timeout, c.TransmittingDisabled,
+	)
 }
 
 func New(cfg *Config) (*Wrapper, error) {
@@ -78,6 +89,10 @@ func (w *Wrapper) Read(p []byte) (n int, err error) {
 			continue
 		}
 
+		if c == 0 {
+			return 0, ErrReadTimeout
+		}
+
 		n += c
 	}
 
@@ -93,9 +108,11 @@ func (w *Wrapper) portClosedFallback(err error) error {
 		}
 
 		w.Logger().Warnf("serail port was reopened")
+
+		return nil
 	}
 
-	return nil
+	return err
 }
 
 func (w *Wrapper) Close() error {

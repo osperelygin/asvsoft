@@ -8,9 +8,9 @@ type configContextKeyType struct {
 var configContextKey = configContextKeyType{}
 
 // FromContext - returns config from root context
-func FromContext(ctx context.Context) *Config {
+func FromContext(ctx context.Context) *ModuleConfig {
 	cfgRaw := ctx.Value(configContextKey)
-	cfg, ok := cfgRaw.(*Config)
+	cfg, ok := cfgRaw.(*ModuleConfig)
 
 	if ok {
 		return cfg
@@ -20,6 +20,6 @@ func FromContext(ctx context.Context) *Config {
 }
 
 // WrapContext - wraps config into context, so it can be passed through the application
-func WrapContext(ctx context.Context, cfg *Config) context.Context {
+func WrapContext(ctx context.Context, cfg *ModuleConfig) context.Context {
 	return context.WithValue(ctx, configContextKey, cfg)
 }

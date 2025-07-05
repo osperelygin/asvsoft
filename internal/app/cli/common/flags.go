@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	defaultBaudrate = 4800
-	defaultTimeout  = 5 * time.Second
+	DefaultSerialPort         = "/dev/ttyAMA0"
+	DefaultSerialPortBaudrate = 4800
+	DefaultSerialPortTimeout  = 5 * time.Second
 )
 
 // AddSerialDestinationFlags добавляем команде флаги последовательного конфигурации
@@ -22,12 +23,12 @@ func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
 
 	cmd.Flags().StringVar(
 		&config.Port, "dst",
-		"/dev/ttySOFT0", "target port to sending measures",
+		DefaultSerialPort, "target port to sending measures",
 	)
 
 	cmd.Flags().IntVar(
 		&config.BaudRate, "dst-baudrate",
-		defaultBaudrate, "serial port baud rate",
+		DefaultSerialPortBaudrate, "serial port baud rate",
 	)
 
 	cmd.Flags().BoolVar(
@@ -51,17 +52,17 @@ func AddSerialSourceFlagsWithPrefix(cmd *cobra.Command, prefix string) *serialpo
 
 	cmd.Flags().StringVar(
 		&config.Port, strings.Trim(prefix+"-"+"port", "-"),
-		"/dev/ttyAMA0", "target port to sending measures",
+		DefaultSerialPort, "target port to sending measures",
 	)
 
 	cmd.Flags().IntVar(
 		&config.BaudRate, strings.Trim(prefix+"-"+"baudrate", "-"),
-		defaultBaudrate, "serial port baud rate",
+		DefaultSerialPortBaudrate, "serial port baud rate",
 	)
 
 	cmd.Flags().DurationVar(
 		&config.Timeout, strings.Trim(prefix+"-"+"timeout", "-"),
-		defaultTimeout, "serial port timeout",
+		DefaultSerialPortTimeout, "serial port timeout",
 	)
 
 	return &config

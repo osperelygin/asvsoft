@@ -14,8 +14,9 @@ import (
 type ModuleID uint8
 
 const (
-	CheckModuleID   ModuleID = 0xF0
-	ControlModuleID ModuleID = 0x01
+	CheckModuleID       ModuleID = 0xF0
+	ControlModuleID     ModuleID = 0x01
+	RegistratorModuleID ModuleID = 0xFF
 )
 
 const (
@@ -265,7 +266,6 @@ func (m *Message) Unmarshal(data []byte) error {
 
 	switch m.MsgID {
 	case SyncRequest:
-		// just chill
 	case SyncResponse:
 		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(rawPayload)))
 		defer d.Close()

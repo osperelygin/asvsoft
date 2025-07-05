@@ -1,5 +1,5 @@
-// Package controller предоставляет подкоманду controller
-package controller
+// Package lidar предоставляет подкоманду lidar
+package lidar
 
 import (
 	"asvsoft/internal/app/cli/common"
@@ -10,9 +10,9 @@ import (
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "controller",
-		Short: "Контроллер управления",
-		RunE:  common.ControllerHandler(proto.ControlModuleID),
+		Use:   "registrar",
+		Short: "Бортовой регистратор",
+		RunE:  common.ControllerHandler(proto.RegistratorModuleID),
 	}
 	cmd.Flags().StringVarP(
 		&common.CtrlCfgPath, "config", "c",

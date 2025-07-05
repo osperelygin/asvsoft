@@ -9,16 +9,16 @@ import (
 )
 
 var (
-	cfg config.Config
+	cfg config.ModuleConfig
 )
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check",
 		Short: "Тестовый модуль",
-		RunE:  common.Handler(&cfg, common.CheckMode),
+		RunE:  common.ModuleHandler(&cfg, common.CheckMode),
 	}
-	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
+	cfg.ControllerSerialPort = common.AddSerialDestinationFlags(cmd)
 
 	return cmd
 }

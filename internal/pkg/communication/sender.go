@@ -38,6 +38,7 @@ func (s *Sender) WithWritter(rw io.WriteCloser) *Sender {
 	return s
 }
 
+// Start асинхронно получает измерения от измерителя s.m и отправляет их в s.wc.
 func (s *Sender) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -92,6 +93,7 @@ LOOP:
 	return nil
 }
 
+// Send упаковывает измерения согласно унифицированному протоколу и отправляет пакет в s.rw. 
 func (s *Sender) Send(_ context.Context, data any) error {
 	var msg proto.Message
 

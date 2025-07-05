@@ -10,17 +10,17 @@ import (
 )
 
 var (
-	cfg config.Config
+	cfg config.ModuleConfig
 )
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "neo-m8t",
 		Short: "Модуль обработки данных ГНСС",
-		RunE:  common.Handler(&cfg, common.NeoM8tMode),
+		RunE:  common.ModuleHandler(&cfg, common.NeoM8tMode),
 	}
-	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
-	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)
+	cfg.ControllerSerialPort = common.AddSerialDestinationFlags(cmd)
+	cfg.SensorSerialPort = common.AddSerialSourceFlags(cmd)
 	cfg.NeoM8t = new(neom8t.Config)
 
 	cmd.Flags().IntVar(

@@ -18,24 +18,23 @@ func NewReceiver(rc io.ReadCloser) *Receiver {
 	}
 }
 
-func (r *Receiver) Recieve() (*proto.Message, error) {
+// Receive читает данный из r.rc и распаковывает пакет в сообщение.
+func (r *Receiver) Receive() (proto.Message, error) {
+	var msg proto.Message
+
 	rawData, err := proto.Read(r.rc)
 	if err != nil {
-		return nil, fmt.Errorf("read msg failed: %v", err)
+		return msg, fmt.Errorf("read msg failed: %v", err)
 	}
 
 	log.Debugf("raw received msg: %+v", rawData)
 
-	var msg proto.Message
-
 	err = msg.Unmarshal(rawData)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal msg failed: %v", err)
+		return msg, fmt.Errorf("unmarshal msg failed: %v", err)
 	}
 
-	log.Infof("received msg: %v", msg)
-
-	return &msg, nil
+	return msg, nil
 }
 
 func (r *Receiver) Close() error {

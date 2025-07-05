@@ -9,17 +9,17 @@ import (
 )
 
 var (
-	cfg config.Config
+	cfg config.ModuleConfig
 )
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "depthmeter",
 		Short: "Модуль обработки данных измерителя глубины",
-		RunE:  common.Handler(&cfg, common.DepthMeterMode),
+		RunE:  common.ModuleHandler(&cfg, common.DepthMeterMode),
 	}
-	cfg.SrcSerialPort = common.AddSerialSourceFlags(cmd)
-	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
+	cfg.SensorSerialPort = common.AddSerialSourceFlags(cmd)
+	cfg.ControllerSerialPort = common.AddSerialDestinationFlags(cmd)
 
 	return cmd
 }

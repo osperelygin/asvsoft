@@ -15,6 +15,9 @@ func NewSyncer(moduleID proto.ModuleID) *Syncer {
 	return &Syncer{moduleID: moduleID}
 }
 
+// Syncer осуществляется синхронизацию системного времени между модулем и контроллером управления.
+// Системное время - время в мс, отсчитываемое от момента старта работы контроллера управления
+// или полученное из переменной окружения START_STAMP.
 type Syncer struct {
 	moduleID proto.ModuleID
 	rw       io.ReadWriter
@@ -25,6 +28,10 @@ func (s *Syncer) WithReadWriter(rw io.ReadWriter) *Syncer {
 	return s
 }
 
+// Sync осуществляет синхронизацию системного времении. При установленом s.rw отправляет
+// запрос синхронизации и назначает систменое время из полученного ответа. При неустановленном
+// s.rw пытается получить начало отсчета системношго времи из START_STAMP, если переменная
+// не установлена, то назчает в качестве начало отсчета время запуска утилиты на модуле.
 func (s *Syncer) Sync() error {
 	if s.rw == nil {
 		log.Traceln("rw == nil: try getting START_STAMP env var")
@@ -40,8 +47,9 @@ func (s *Syncer) Sync() error {
 			return fmt.Errorf("cannot parse start stamp %q: %w", startStampStr, err)
 		}
 
-		log.Tracef("start stamp set to %d", startStamp)
 		proto.SetStartStamp(uint32(startStamp))
+
+		log.Tracef("start stamp set to %d", startStamp)
 
 		return nil
 	}
@@ -94,6 +102,8 @@ func (s *Syncer) Sync() error {
 	return nil
 }
 
+// Serve ожидает запрос синхронизации, возвращает в ответе начало отсчета системного времени.
+// Запускается только на контроллере управления.
 func (s *Syncer) Serve() error {
 	if s.rw == nil {
 		log.Traceln("skipping serve: rw == nil")
@@ -117,15 +127,21 @@ func (s *Syncer) Serve() error {
 	log.Debugf("raw sync request: %+v", rawReq)
 	log.Debugf("sync request: %+v", req)
 
-	if req.MsgID != proto.SyncRequest {
-		return fmt.Errorf("unexpected msgID: %#X", req.MsgID)
-	}
+	_, err = s.ProcessSyncRequest(req)
 
+	return err
+}
+
+func (s *Syncer) ProcessSyncRequest(req proto.Message) (proto.Message, error) {
 	var resp proto.Message
+
+	if req.MsgID != proto.SyncRequest {
+		return resp, fmt.Errorf("unexpected msgID: %#X", req.MsgID)
+	}
 
 	b, err := resp.Marshal(proto.GetStartStamp(), s.moduleID, proto.SyncResponse)
 	if err != nil {
-		return fmt.Errorf("cannot marshal resp: %w", err)
+		return resp, fmt.Errorf("cannot marshal resp: %w", err)
 	}
 
 	time.Sleep(time.Second)
@@ -134,11 +150,10 @@ func (s *Syncer) Serve() error {
 
 	_, err = s.rw.Write(b)
 	if err != nil {
-		return fmt.Errorf("cannot write resp: %w", err)
+		return resp, fmt.Errorf("cannot write resp: %w", err)
 	}
 
 	log.Debugf("raw sync response: %+v", b)
-	log.Debugf("sync response: %+v", resp)
 
-	return nil
+	return resp, nil
 }

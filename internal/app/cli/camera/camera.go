@@ -9,17 +9,17 @@ import (
 )
 
 var (
-	cfg config.Config
+	cfg config.ModuleConfig
 )
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "camera",
 		Short: "Модуль обработки данных камеры",
-		RunE:  common.Handler(&cfg, common.CameraMode),
+		RunE:  common.ModuleHandler(&cfg, common.CameraMode),
 	}
 
-	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
+	cfg.ControllerSerialPort = common.AddSerialDestinationFlags(cmd)
 
 	return cmd
 }

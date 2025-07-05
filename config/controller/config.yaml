@@ -1,0 +1,7 @@
+modules:
+  depth_meter:
+    enabled: true
+    listener:
+      port: /dev/ttyAMA0
+      baudrate: 9600
+      timeout: 5s

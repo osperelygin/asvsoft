@@ -11,17 +11,17 @@ import (
 )
 
 var (
-	cfg config.Config
+	cfg config.ModuleConfig
 )
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sense-hat",
 		Short: "Обработка и передача данных SENSE HAT (C)",
-		RunE:  common.Handler(&cfg, common.ImuMode),
+		RunE:  common.ModuleHandler(&cfg, common.ImuMode),
 	}
 
-	cfg.DstSerialPort = common.AddSerialDestinationFlags(cmd)
+	cfg.ControllerSerialPort = common.AddSerialDestinationFlags(cmd)
 	cfg.Imu = sensehat.NewImuConfig()
 
 	// TODO: реализовать различные режимы
