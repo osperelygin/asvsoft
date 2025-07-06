@@ -80,7 +80,7 @@ var header = []byte{0xFA, 0xFA}
 // Read ищет в потоке принимаемых байтов синхронизовачный заголовок
 // и затем вычитает фрейм протокола. Возвращает полученный фрейм и ошибку.
 func Read(r io.Reader) ([]byte, error) {
-	return ReadWithLimit(r, defaultReadRetries)
+	return ReadWithLimitV2(r, defaultReadRetries)
 }
 
 // ReadWithLimit аналогично Read, но с возможностью указать лимит не по умолчанию.
@@ -112,9 +112,66 @@ func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 			return nil, fmt.Errorf("proto.Read failed: %w", err)
 		}
 
-		payloadSize := svcBuff[payloadFirstByte-1]
+		payloadSize := int(svcBuff[payloadFirstByte-1])
 
 		rawData = make([]byte, serviceBytesSize+payloadSize)
+		copy(rawData, svcBuff[:payloadFirstByte])
+
+		_, err = r.Read(rawData[payloadFirstByte:])
+		if err != nil {
+			return nil, fmt.Errorf("proto.Read failed: %w", err)
+		}
+	}
+
+	if len(rawData) == 0 {
+		return nil, fmt.Errorf("frame not found after %d bytes reading", limit)
+	}
+
+	return rawData, nil
+}
+
+// Read ищет в потоке принимаемых байтов синхронизовачный заголовок
+// и затем вычитает фрейм протокола. Возвращает полученный фрейм и ошибку.
+func ReadV2(r io.Reader) ([]byte, error) {
+	return ReadWithLimitV2(r, defaultReadRetries)
+}
+
+// ReadWithLimitV2 аналогично Read, но с возможностью указать лимит не по умолчанию.
+func ReadWithLimitV2(r io.Reader, limit int) ([]byte, error) {
+	var (
+		rawData []byte
+		svcBuff = make([]byte, payloadFirstByte)
+	)
+
+	_, err := r.Read(svcBuff)
+	if err != nil {
+		return nil, fmt.Errorf("proto.Read failed: %w", err)
+	}
+
+	for retries := limit; retries > 0 && len(rawData) == 0; retries-- {
+		start := bytes.Index(svcBuff, header)
+		if start == -1 {
+			svcBuff[0] = svcBuff[payloadFirstByte-1]
+
+			_, err = r.Read(svcBuff[1:])
+			if err != nil {
+				return nil, fmt.Errorf("proto.Read failed: %w", err)
+			}
+
+			continue
+		}
+
+		coursor := len(svcBuff) - start
+		_ = copy(svcBuff[0:coursor], svcBuff[start:])
+
+		_, err = r.Read(svcBuff[coursor:])
+		if err != nil {
+			return nil, fmt.Errorf("proto.Read failed: %w", err)
+		}
+
+		payloadSize := int(svcBuff[payloadFirstByte-1])
+		rawData = make([]byte, serviceBytesSize+payloadSize)
+
 		copy(rawData, svcBuff[:payloadFirstByte])
 
 		_, err = r.Read(rawData[payloadFirstByte:])

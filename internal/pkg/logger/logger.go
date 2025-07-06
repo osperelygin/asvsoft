@@ -12,6 +12,7 @@ type Logger interface {
 	Errorf(format string, args ...any)
 	Warnf(format string, args ...any)
 	Debugf(format string, args ...any)
+	Tracef(format string, args ...any)
 }
 
 type DummyLogger struct{}
@@ -20,6 +21,7 @@ func (dm DummyLogger) Infof(format string, args ...any)  {} // nolint: revive
 func (dm DummyLogger) Errorf(format string, args ...any) {} // nolint: revive
 func (dm DummyLogger) Warnf(format string, args ...any)  {} // nolint: revive
 func (dm DummyLogger) Debugf(format string, args ...any) {} // nolint: revive
+func (dm DummyLogger) Tracef(format string, args ...any) {} // nolint: revive
 
 type LoggerWrapper struct {
 	prefix string
@@ -44,4 +46,8 @@ func (l LoggerWrapper) Warnf(format string, args ...any) {
 
 func (l LoggerWrapper) Debugf(format string, args ...any) {
 	l.logger.Debugf("%s %s", l.prefix, fmt.Sprintf(format, args...))
+}
+
+func (l LoggerWrapper) Tracef(format string, args ...any) {
+	l.logger.Tracef("%s %s", l.prefix, fmt.Sprintf(format, args...))
 }

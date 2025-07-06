@@ -1,5 +1,5 @@
-// Package lidar предоставляет подкоманду lidar
-package lidar
+// Package registrar предоставляет подкоманду registrar
+package registrar
 
 import (
 	"asvsoft/internal/app/cli/common"

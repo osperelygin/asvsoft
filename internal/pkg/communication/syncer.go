@@ -1,6 +1,7 @@
 package communication
 
 import (
+	"asvsoft/internal/pkg/logger"
 	"asvsoft/internal/pkg/proto"
 	"fmt"
 	"io"
@@ -61,43 +62,64 @@ func (s *Syncer) Sync() error {
 		return fmt.Errorf("cannot marshal msg: %w", err)
 	}
 
-	log.Traceln("writing sync request...")
+	const syncRequestRetries = 10
 
-	_, err = s.rw.Write(b)
+	for retry := range syncRequestRetries {
+		log := logger.Wrap(
+			log.StandardLogger(),
+			fmt.Sprintf("[retry #%d]", retry),
+		)
+
+		log.Tracef("writing sync request...")
+
+		_, err = s.rw.Write(b)
+		if err != nil {
+			log.Errorf("cannot write measures: %v", err)
+			continue
+		}
+
+		log.Debugf("raw sync request: %+v", b)
+		log.Debugf("sync request: %+v", req)
+
+		time.Sleep(500 * time.Millisecond)
+
+		log.Tracef("reading sync response...")
+
+		var rawResp []byte
+
+		rawResp, err = proto.Read(s.rw)
+		if err != nil {
+			log.Errorf("cannot read response: %v", err)
+			continue
+		}
+
+		var resp proto.Message
+
+		err = resp.Unmarshal(rawResp)
+		if err != nil {
+			log.Errorf("unmarshal msg failed: %v", err)
+			continue
+		}
+
+		log.Debugf("raw sync response: %+v", rawResp)
+		log.Debugf("sync response: %+v", resp)
+
+		if resp.MsgID != proto.SyncResponse {
+			log.Errorf("unexpected msgID: %#X", resp.MsgID)
+			continue
+		}
+
+		startStamp := resp.Payload.(uint32)
+		proto.SetStartStamp(startStamp)
+
+		log.Infof("time was synced, start stamp: %d", startStamp)
+
+		break
+	}
+
 	if err != nil {
-		return fmt.Errorf("cannot write measures: %w", err)
+		return fmt.Errorf("failed to sync: %w", err)
 	}
-
-	log.Debugf("raw sync request: %+v", b)
-	log.Debugf("sync request: %+v", req)
-
-	time.Sleep(500 * time.Millisecond)
-
-	log.Traceln("reading sync response...")
-
-	rawResp, err := proto.Read(s.rw)
-	if err != nil {
-		return fmt.Errorf("cannot read response: %w", err)
-	}
-
-	var resp proto.Message
-
-	err = resp.Unmarshal(rawResp)
-	if err != nil {
-		return fmt.Errorf("unmarshal msg failed: %v", err)
-	}
-
-	log.Debugf("raw sync response: %+v", rawResp)
-	log.Debugf("sync response: %+v", resp)
-
-	if resp.MsgID != proto.SyncResponse {
-		return fmt.Errorf("unexpected msgID: %#X", resp.MsgID)
-	}
-
-	startStamp := resp.Payload.(uint32)
-	proto.SetStartStamp(startStamp)
-
-	log.Infof("time was synced, start stamp: %d", startStamp)
 
 	return nil
 }

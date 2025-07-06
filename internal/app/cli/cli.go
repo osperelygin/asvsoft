@@ -9,6 +9,7 @@ import (
 	"asvsoft/internal/app/cli/lidar"
 	"asvsoft/internal/app/cli/navigation"
 	neom8t "asvsoft/internal/app/cli/neo-m8t"
+	"asvsoft/internal/app/cli/registrar"
 	sensehat "asvsoft/internal/app/cli/sense-hat"
 	"asvsoft/internal/app/ctxutils"
 	"os"
@@ -41,6 +42,7 @@ func RootCmd() *cobra.Command {
 		sensehat.Cmd(),
 		check.Cmd(),
 		camera.Cmd(),
+		registrar.Cmd(),
 	)
 
 	return &rootCmd

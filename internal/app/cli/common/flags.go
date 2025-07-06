@@ -12,42 +12,32 @@ import (
 const (
 	DefaultSerialPort         = "/dev/ttyAMA0"
 	DefaultSerialPortBaudrate = 4800
-	DefaultSerialPortTimeout  = 5 * time.Second
+	DefaultSerialPortTimeout  = 3 * time.Second
 )
 
 // AddSerialDestinationFlags добавляем команде флаги последовательного конфигурации
 // последовательного интерфейса назначения и возвращает его конфиг. По умолчанию используется порт
 // /dev/ttySOFT0 со скоростью 4800 bit/sec
 func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
-	var config serialport.Config
-
-	cmd.Flags().StringVar(
-		&config.Port, "dst",
-		DefaultSerialPort, "target port to sending measures",
-	)
-
-	cmd.Flags().IntVar(
-		&config.BaudRate, "dst-baudrate",
-		DefaultSerialPortBaudrate, "serial port baud rate",
-	)
+	config := addSerialSourceFlagsWithPrefix(cmd, "dst")
 
 	cmd.Flags().BoolVar(
 		&config.TransmittingDisabled, "transmitting-disabled",
 		false, "disble transmitting to destination port",
 	)
 
-	return &config
+	return config
 }
 
 // AddSerialSourceFlags добавляем команде флаги последовательного конфигурации
 // последовательного интерфейса источника и возвращает его конфиг. По умолчанию используется порт
 // /dev/ttyAMA0 со скоростью 4800 bit/sec и таймаутом 5 секунд .
 func AddSerialSourceFlags(cmd *cobra.Command) *serialport.Config {
-	return AddSerialSourceFlagsWithPrefix(cmd, "")
+	return addSerialSourceFlagsWithPrefix(cmd, "")
 }
 
-// AddSerialSourceFlagsWithPrefix аналогично AddSerialSourceFlags, но с воможностью добавить флагам префикс.
-func AddSerialSourceFlagsWithPrefix(cmd *cobra.Command, prefix string) *serialport.Config {
+func addSerialSourceFlagsWithPrefix(cmd *cobra.Command, prefix string) *serialport.Config {
+	// addSerialSourceFlagsWithPrefix аналогично AddSerialSourceFlags, но с воможностью добавить флагам префикс.
 	var config serialport.Config
 
 	cmd.Flags().StringVar(
