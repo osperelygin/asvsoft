@@ -22,11 +22,7 @@ func TestRead(t *testing.T) {
 
 		b, err := Read(bytes.NewReader(rawData))
 		require.NoError(t, err)
-		require.Equal(t, msgBytes, b)
-
-		b, err = ReadV2(bytes.NewReader(rawData))
-		require.NoError(t, err)
-		require.Equal(t, msgBytes, b)
+		require.Equal(t, msgBytes, b, "неожиданное упакованное сообщение")
 	})
 
 	t.Run("отсутствие фрейма в потоке байтов", func(t *testing.T) {
@@ -35,11 +31,6 @@ func TestRead(t *testing.T) {
 		b, err := Read(bytes.NewReader(emptyFlow))
 		require.Nil(t, b)
 		require.Error(t, err)
-
-		b, err = ReadV2(bytes.NewReader(emptyFlow))
-		require.Nil(t, b)
-		require.Error(t, err)
-
 	})
 }
 

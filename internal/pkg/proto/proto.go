@@ -52,7 +52,7 @@ const (
 	moduleIDSize     = 1
 	msgIDSize        = 1
 	systemTimeSize   = 4
-	payloadBytesSize = 1
+	payloadBytesSize = 2
 	checkSumSize     = 1
 )
 
@@ -112,9 +112,17 @@ func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 			return nil, fmt.Errorf("proto.Read failed: %w", err)
 		}
 
-		payloadSize := int(svcBuff[payloadFirstByte-1])
+		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(svcBuff[payloadFirstByte-payloadBytesSize : payloadFirstByte])))
+		defer d.Close()
 
-		rawData = make([]byte, serviceBytesSize+payloadSize)
+		var payloadSize uint16
+
+		err := d.Decode(&payloadSize)
+		if err != nil {
+			return nil, fmt.Errorf("decode payload size failed: %w", err)
+		}
+
+		rawData = make([]byte, serviceBytesSize+int(payloadSize))
 		copy(rawData, svcBuff[:payloadFirstByte])
 
 		_, err = r.Read(rawData[payloadFirstByte:])
@@ -128,12 +136,6 @@ func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 	}
 
 	return rawData, nil
-}
-
-// Read ищет в потоке принимаемых байтов синхронизовачный заголовок
-// и затем вычитает фрейм протокола. Возвращает полученный фрейм и ошибку.
-func ReadV2(r io.Reader) ([]byte, error) {
-	return ReadWithLimitV2(r, defaultReadRetries)
 }
 
 // ReadWithLimitV2 аналогично Read, но с возможностью указать лимит не по умолчанию.
@@ -161,16 +163,25 @@ func ReadWithLimitV2(r io.Reader, limit int) ([]byte, error) {
 			continue
 		}
 
-		coursor := len(svcBuff) - start
-		_ = copy(svcBuff[0:coursor], svcBuff[start:])
+		cursor := len(svcBuff) - start
+		_ = copy(svcBuff[0:cursor], svcBuff[start:])
 
-		_, err = r.Read(svcBuff[coursor:])
+		_, err = r.Read(svcBuff[cursor:])
 		if err != nil {
 			return nil, fmt.Errorf("proto.Read failed: %w", err)
 		}
 
-		payloadSize := int(svcBuff[payloadFirstByte-1])
-		rawData = make([]byte, serviceBytesSize+payloadSize)
+		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(svcBuff[payloadFirstByte-payloadBytesSize : payloadFirstByte])))
+		defer d.Close()
+
+		var payloadSize uint16
+
+		err := d.Decode(&payloadSize)
+		if err != nil {
+			return nil, fmt.Errorf("decode payload size failed: %w", err)
+		}
+
+		rawData = make([]byte, serviceBytesSize+int(payloadSize))
 
 		copy(rawData, svcBuff[:payloadFirstByte])
 
@@ -192,7 +203,7 @@ type Message struct {
 	ModuleID    ModuleID
 	MsgID       MessageID
 	SystemTime  uint32
-	PayloadSize uint8
+	PayloadSize uint16
 	Payload     any
 	CheckSum    uint8
 }
@@ -235,7 +246,7 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 		return nil, err
 	}
 
-	m.PayloadSize = uint8(len(rawPayload))
+	m.PayloadSize = uint16(len(rawPayload))
 	m.SystemTime = systemTime()
 
 	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+int(m.PayloadSize))))
