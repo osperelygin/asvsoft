@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -26,11 +27,17 @@ func NewSender(m Measurer, addr proto.ModuleID, mode proto.MessageID) *Sender {
 	}
 }
 
+func (s *Sender) WithSleep(sleep time.Duration) *Sender {
+	s.sleep = sleep
+	return s
+}
+
 type Sender struct {
-	m    Measurer
-	wc   io.WriteCloser
-	addr proto.ModuleID
-	mode proto.MessageID
+	m     Measurer
+	wc    io.WriteCloser
+	addr  proto.ModuleID
+	mode  proto.MessageID
+	sleep time.Duration
 }
 
 func (s *Sender) WithWritter(rw io.WriteCloser) *Sender {
@@ -93,7 +100,7 @@ LOOP:
 	return nil
 }
 
-// Send упаковывает измерения согласно унифицированному протоколу и отправляет пакет в s.rw. 
+// Send упаковывает измерения согласно унифицированному протоколу и отправляет пакет в s.rw.
 func (s *Sender) Send(_ context.Context, data any) error {
 	var msg proto.Message
 
@@ -114,6 +121,8 @@ func (s *Sender) Send(_ context.Context, data any) error {
 
 	log.Debugf("raw sent msg: %+v", b)
 	log.Infof("sent msg: %+v", msg)
+
+	time.Sleep(s.sleep)
 
 	return nil
 }

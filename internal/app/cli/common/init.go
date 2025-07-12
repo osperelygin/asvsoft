@@ -122,7 +122,7 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 		}
 
 		dstPort.SetLogger(log.StandardLogger())
-		sndr.WithWritter(dstPort)
+		sndr.WithWritter(dstPort).WithSleep(cfg.ControllerSerialPort.Sleep)
 		sncr.WithReadWriter(dstPort)
 	}
 

@@ -25,12 +25,13 @@ type Config struct {
 	BaudRate             int           `yaml:"baudrate" mapstructure:"baudrate"`
 	Timeout              time.Duration `yaml:"timeout" mapstructure:"timeout"`
 	TransmittingDisabled bool
+	Sleep                time.Duration
 }
 
 func (c Config) String() string {
 	return fmt.Sprintf(
-		"port: %q, baudrate: %d, timeout: %v, transmitting_disabled: %v",
-		c.Port, c.BaudRate, c.Timeout, c.TransmittingDisabled,
+		"port: %q, baudrate: %d, timeout: %v, sleep: %v, transmitting_disabled: %v",
+		c.Port, c.BaudRate, c.Timeout, c.Sleep, c.TransmittingDisabled,
 	)
 }
 

@@ -21,6 +21,11 @@ const (
 func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
 	config := addSerialSourceFlagsWithPrefix(cmd, "dst")
 
+	cmd.Flags().DurationVar(
+		&config.Sleep, "dst-sleep",
+		0, "sleep after transmitting data via serail port",
+	)
+
 	cmd.Flags().BoolVar(
 		&config.TransmittingDisabled, "transmitting-disabled",
 		false, "disble transmitting to destination port",
