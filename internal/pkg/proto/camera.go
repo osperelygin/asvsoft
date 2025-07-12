@@ -11,6 +11,15 @@ import (
 type CameraData struct {
 	// Углы ориентации в 0.0001 град
 	Yaw, Pitch, Roll int16
+	// RawImage сырое кодированное изображение
+	RawImage []byte
+}
+
+func (cd CameraData) String() string {
+	return fmt.Sprintf(
+		"{Yaw:%d,Pitch:%d,Roll:%d,RawImageLen:%d}",
+		cd.Yaw, cd.Pitch, cd.Roll, len(cd.RawImage),
+	)
 }
 
 const (
@@ -20,6 +29,7 @@ const (
 func packCameraData(in *CameraData, msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
+		res []byte
 		err error
 	)
 
@@ -33,11 +43,14 @@ func packCameraData(in *CameraData, msgID MessageID) ([]byte, error) {
 			return nil, err
 		}
 
+		res = buf.Bytes()
+	case WritingModeB:
+		res = in.RawImage
 	default:
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}
 
-	return buf.Bytes(), err
+	return res, err
 }
 
 func unpackCameraData(in []byte, msgID MessageID) (out *CameraData, err error) {
@@ -51,6 +64,8 @@ func unpackCameraData(in []byte, msgID MessageID) (out *CameraData, err error) {
 		if err != nil {
 			return nil, err
 		}
+	case WritingModeB:
+		out.RawImage = in
 	default:
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}

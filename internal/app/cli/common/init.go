@@ -9,11 +9,14 @@ import (
 	neom8t "asvsoft/internal/app/sensors/neo-m8t"
 	sensehat "asvsoft/internal/app/sensors/sense-hat"
 	"asvsoft/internal/pkg/communication"
+	"asvsoft/internal/pkg/logger"
 	"asvsoft/internal/pkg/proto"
 	serialport "asvsoft/internal/pkg/serial-port"
 	"context"
 	"fmt"
+	"slices"
 
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,16 +27,23 @@ const (
 	LidarMode
 	NeoM8tMode
 	ImuMode
+	MockCameraMode
 	CameraMode
 	NavMode
 	RegistratorMode
 	CheckMode
 )
 
+var (
+	requiredSrcSerialPortRunMode = []RunMode{
+		DepthMeterMode, LidarMode, NeoM8tMode,
+	}
+)
+
 // Init общая функция инициализации модуля камеры, лидара, ИНС и ГНСС, измерителя глубины ,
 // модуля навигации и модуля проверки. Требуемые для работы модуля порты-источники и
 // порты-назначения обернуты в объекте sender'a.
-func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communication.Syncer, error) {
+func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communication.Sender, *communication.Syncer, error) {
 	cfg := config.FromContext(ctx)
 
 	var (
@@ -41,7 +51,7 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 		err     error
 	)
 
-	if mode != ImuMode && mode != CheckMode && mode != CameraMode {
+	if slices.Contains(requiredSrcSerialPortRunMode, mode) {
 		srcPort, err = serialport.New(cfg.SensorSerialPort)
 		if err != nil {
 			return nil, nil, err
@@ -87,9 +97,19 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 		addr = proto.CheckModuleID
 		m = check.New()
 	case CameraMode:
+		cam, err := camera.New()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		m = cam.WithLogger(
+			logger.Wrap(logrus.StandardLogger(), "[camera]"),
+		)
+
 		addr = proto.CameraModuleID
+	case MockCameraMode:
 		// hardcode
-		m, err = camera.NewCamera([][3]int16{
+		m, err = camera.NewMockCamera([][3]int16{
 			{1090, -12711, -16544},
 			{1087, -12768, -16545},
 			{1085, -12669, -16545},
@@ -98,11 +118,17 @@ func Init(ctx context.Context, mode RunMode) (*communication.Sender, *communicat
 			return nil, nil, err
 		}
 
+		addr = proto.CameraModuleID
 	default:
 		panic(fmt.Sprintf("unknown run mode: %q", addr))
 	}
 
-	sndr := communication.NewSender(m, addr, proto.WritingModeA)
+	sendMode := proto.WritingModeA
+	if len(opts) > 0 && opts[0].SendMode != 0 {
+		sendMode = opts[0].SendMode
+	}
+
+	sndr := communication.NewSender(m, addr, sendMode)
 	sncr := communication.NewSyncer(addr)
 
 	if !cfg.ControllerSerialPort.TransmittingDisabled {

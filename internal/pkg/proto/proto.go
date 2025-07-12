@@ -210,7 +210,7 @@ type Message struct {
 
 func (m Message) String() string {
 	return fmt.Sprintf(
-		"{moduleID:%#X,msgID:%#X,ts:%d,payloadSize:%d,payload:%+v,checksum: %#X}",
+		"{moduleID:%#X,msgID:%#X,ts:%d,payloadSize:%d,payload:%s,checksum: %#X}",
 		m.ModuleID, m.MsgID, m.SystemTime, m.PayloadSize, m.Payload, m.CheckSum,
 	)
 }
@@ -325,12 +325,17 @@ func (m *Message) Unmarshal(data []byte) error {
 		return err
 	}
 
-	if m.CheckSum != crc8.ChecksumSMBus(data[headerSize:len(data)-checkSumSize]) {
-		return fmt.Errorf("check sum missmatch")
-	}
-
 	m.ModuleID = ModuleID(moduleID)
 	m.MsgID = MessageID(msgID)
+
+	checkSum := crc8.ChecksumSMBus(data[headerSize : len(data)-checkSumSize])
+
+	if m.CheckSum != checkSum {
+		return fmt.Errorf(
+			"check sum missmatch: recieved cs: %#X, calculated cs: %#X, message: %s",
+			m.CheckSum, checkSum, m,
+		)
+	}
 
 	switch m.MsgID {
 	case SyncRequest:

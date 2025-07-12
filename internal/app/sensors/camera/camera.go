@@ -1,47 +1,96 @@
-// Package camera предоставляет функционал для чтения данных камеры
 package camera
 
 import (
+	"asvsoft/internal/pkg/logger"
 	"asvsoft/internal/pkg/proto"
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"net"
+	"os"
 	"time"
 )
 
+const (
+	defaultSocketPath    = "/tmp/camera.sock"
+	defaultSocketTimeout = time.Second
+	defaultMsgBufferSize = 320 * 240
+)
+
+var (
+	msgBuffer = make([]byte, defaultMsgBufferSize)
+)
+
 type Camera struct {
-	i    int
-	data [][3]int16
+	log      logger.Logger
+	listener net.Listener
+	conn     net.Conn
 }
 
-// ErrNoMoreData ошибка отсутсвия данных
-var ErrNoMoreData = errors.New("no more data")
+func New() (*Camera, error) {
+	err := os.Remove(defaultSocketPath)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("fail to remove old socket: %w", err)
+	}
 
-func NewCamera(data [][3]int16) (*Camera, error) {
-	return &Camera{data: data}, nil
+	listener, err := net.Listen("unix", defaultSocketPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create listenter %w:", err)
+	}
+
+	return &Camera{listener: listener, log: logger.DummyLogger{}}, nil
 }
 
-func (c *Camera) Measure(_ context.Context) (any, error) {
-	return c.measure()
+func (c *Camera) WithLogger(log logger.Logger) *Camera {
+	c.log = log
+	return c
 }
 
 func (c *Camera) Close() error {
+	errConnClose := c.conn.Close()
+	errListenerClose := c.listener.Close()
+	errSocketRemove := os.Remove(defaultSocketPath)
+
+	if errConnClose != nil || errListenerClose != nil || errSocketRemove != nil {
+		return fmt.Errorf(
+			"connection close error: %w, listener close error: %w, socket remove error: %w",
+			errConnClose, errListenerClose, errSocketRemove,
+		)
+	}
+
 	return nil
 }
 
+func (c *Camera) Measure(ctx context.Context) (any, error) {
+	return c.measure()
+}
+
 func (c *Camera) measure() (*proto.CameraData, error) {
-	time.Sleep(40 * time.Millisecond)
+	var err error
 
-	if c.i >= len(c.data) {
-		return nil, ErrNoMoreData
+	if c.conn == nil {
+		c.log.Debugf("connection is nil, waiting connection...")
+
+		c.conn, err = c.listener.Accept()
+		if err != nil {
+			return nil, fmt.Errorf("failed to accept connection: %w", err)
+		}
+
+		c.log.Debugf("connection is estabilished, start reading...")
 	}
 
-	data := &proto.CameraData{
-		Yaw:   c.data[c.i][0],
-		Pitch: c.data[c.i][1],
-		Roll:  c.data[c.i][2],
+	n, err := c.conn.Read(msgBuffer)
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			_ = c.conn.Close()
+			c.conn = nil
+		}
+
+		return nil, fmt.Errorf("failed to read data from connection: %w", err)
 	}
 
-	c.i++
+	c.log.Debugf("successfully read %d bytes", n)
 
-	return data, nil
+	return &proto.CameraData{RawImage: msgBuffer[:n]}, nil
 }

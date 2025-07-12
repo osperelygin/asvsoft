@@ -16,21 +16,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	CtrlCfgPath string
-)
-
-type module struct {
-	rcvr *communication.Receiver
-	sncr *communication.Syncer
+type ModuleOptions struct {
+	SendMode proto.MessageID
 }
 
 // ModuleHandler инициализирует sender и syncer, запускает sender.
-func ModuleHandler(cfg *config.ModuleConfig, mode RunMode) func(cmd *cobra.Command, args []string) error {
+func ModuleHandler(cfg *config.ModuleConfig, mode RunMode, opts ...ModuleOptions) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := config.WrapContext(cmd.Context(), cfg)
 
-		sndr, sncr, err := Init(ctx, mode)
+		sndr, sncr, err := Init(ctx, mode, opts...)
 		if err != nil {
 			return err
 		}
@@ -47,6 +42,15 @@ func ModuleHandler(cfg *config.ModuleConfig, mode RunMode) func(cmd *cobra.Comma
 
 		return nil
 	}
+}
+
+var (
+	CtrlCfgPath string
+)
+
+type module struct {
+	rcvr *communication.Receiver
+	sncr *communication.Syncer
 }
 
 // ControllerHandler ...
@@ -154,6 +158,33 @@ func receiving(
 
 				continue
 			}
+
+			// TODO: использовать общий подход к обработке сообщения каждого модуля
+			if msg.ModuleID == proto.CameraModuleID && msg.MsgID == proto.WritingModeB {
+				err = handleCameraRegistratorMsg(log, msg)
+				if err != nil {
+					log.Errorf("failed to handle camera message: %v", err)
+					continue
+				}
+			}
 		}
 	}
+}
+
+func handleCameraRegistratorMsg(log logger.Logger, msg proto.Message) error {
+	payload, ok := msg.Payload.(*proto.CameraData)
+	if !ok {
+		return fmt.Errorf("unexecpted message payload type")
+	}
+
+	fileName := fmt.Sprintf("camera_%d.jpeg", msg.SystemTime)
+
+	err := os.WriteFile(fileName, payload.RawImage, 0666)
+	if err != nil {
+		return fmt.Errorf("failed to write image to file: %w", err)
+	}
+
+	log.Infof("successfully saved recieved camera image to %s", fileName)
+
+	return nil
 }

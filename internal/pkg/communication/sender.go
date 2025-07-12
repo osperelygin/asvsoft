@@ -75,7 +75,7 @@ func (s *Sender) Start(ctx context.Context) error {
 					continue
 				}
 
-				log.Infof("read measure: %+v", measure)
+				log.Infof("read measure: %s", measure)
 
 				measureChan <- measure
 			}
@@ -120,7 +120,7 @@ func (s *Sender) Send(_ context.Context, data any) error {
 	}
 
 	log.Debugf("raw sent msg: %+v", b)
-	log.Infof("sent msg: %+v", msg)
+	log.Infof("sent msg: %s", msg)
 
 	time.Sleep(s.sleep)
 
