@@ -14,3 +14,27 @@ Experement's commands:
 `asvsoft depthmeter --port /dev/ttyUSB0 --baudrate 921600 --loglevel=trace --transmitting-disabled | tee dm_data_exp.log`
 
 `fgrep "moduleID:0X71" dm_data_exp.log | sed -E 's/(.*)ts:([0-9]+)(.*)Distance:([0-9]+)(.*)/\2,\4/g' > dm_dist_exp.log`
+
+Registrator commands:
+
+- Sonar:
+
+`asvsoft depthmeter --port /dev/ttyAMA3 --baudrate 115200 --dst-port /dev/ttySC1 | tee depthmeter.rlog`
+
+- LiDAR
+
+`asvsoft lidar --port /dev/ttyUSB0 --baudrate 921600 | tee lidar.rlog`
+
+- GNSS
+
+`asvsoft neo-m8t --port /dev/ttyS0 --baudrate 9600 --dst-port /dev/ttyAMA5 --dst-baudrate 4800 | tee gnss.rlog`
+
+- IMU:
+
+`asvsoft sense-hat | fgrep -v i2c | tee sensethat.rlog`
+
+- Camera:
+
+`python3 registrator.py`
+
+`asvsoft camera --dst-port /dev/ttySC1 | tee camera.rlog`
