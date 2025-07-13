@@ -22,6 +22,11 @@ type LidarData struct {
 	Timestamp uint16
 }
 
+func (d LidarData) String() string {
+	type _LidarData LidarData
+	return fmt.Sprintf("%+v", _LidarData(d))
+}
+
 type Point struct {
 	Distance  uint16
 	Intensity uint8

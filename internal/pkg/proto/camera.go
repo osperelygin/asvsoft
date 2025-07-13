@@ -18,8 +18,8 @@ type CameraData struct {
 
 func (cd CameraData) String() string {
 	return fmt.Sprintf(
-		"{Yaw:%d,Pitch:%d,Roll:%d,RawImageLen:%d,CurrentChunck:%d,TotalChunckes:%d}",
-		cd.Yaw, cd.Pitch, cd.Roll, len(cd.RawImagePart), cd.CurrentChunck, cd.TotalChunckes,
+		"{len(RawImagePart):%d,CurrentChunck:%d,TotalChunckes:%d}",
+		len(cd.RawImagePart), cd.CurrentChunck, cd.TotalChunckes,
 	)
 }
 

@@ -23,6 +23,11 @@ type DepthMeterData struct {
 	Precision uint8
 }
 
+func (d DepthMeterData) String() string {
+	type _DepthMeterData DepthMeterData
+	return fmt.Sprintf("%+v", _DepthMeterData(d))
+}
+
 const (
 	depthMeterPaylodSizeModeA = 12
 )

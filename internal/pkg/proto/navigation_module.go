@@ -45,6 +45,11 @@ type GNSSData struct {
 	SAcc, CAcc       uint32
 }
 
+func (d GNSSData) String() string {
+	type _GNSSData GNSSData
+	return fmt.Sprintf("%+v", _GNSSData(d))
+}
+
 type NavigationModuleData struct {
 	IMUData
 	GNSSData

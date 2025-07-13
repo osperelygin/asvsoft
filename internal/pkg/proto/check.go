@@ -13,6 +13,11 @@ type CheckData struct {
 	Value uint32
 }
 
+func (d CheckData) String() string {
+	type _CheckData CheckData
+	return fmt.Sprintf("%+v", _CheckData(d))
+}
+
 func packCheckData(in *CheckData, msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
