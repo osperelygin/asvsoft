@@ -62,7 +62,7 @@ func Cmd() *cobra.Command {
 
 	cmd.Flags().BoolVar(
 		&cfg.Imu.Gyr.RemoveOffset, "remove-offset",
-		true, "флаг удаления постоянного сдвига гироскопов",
+		false, "флаг удаления постоянного сдвига гироскопов",
 	)
 
 	return cmd

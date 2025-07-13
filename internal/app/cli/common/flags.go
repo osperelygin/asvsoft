@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	DefaultSerialPort         = "/dev/ttyAMA0"
-	DefaultSerialPortBaudrate = 4800
-	DefaultSerialPortTimeout  = 3 * time.Second
+	DefaultSerialPort         = "/dev/ttySC0"
+	DefaultSerialPortBaudrate = 921600
+	DefaultSerialPortTimeout  = 500 * time.Millisecond
 )
 
 // AddSerialDestinationFlags добавляем команде флаги последовательного конфигурации
@@ -28,7 +28,7 @@ func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
 
 	cmd.Flags().BoolVar(
 		&config.Sync, "dst-sync",
-		false, "wait ok message after sending own message",
+		true, "wait ok message after sending own message",
 	)
 
 	cmd.Flags().BoolVar(
