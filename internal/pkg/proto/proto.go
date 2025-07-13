@@ -44,6 +44,8 @@ const (
 const (
 	SyncRequest MessageID = 0xFA + iota
 	SyncResponse
+	ResponseOK
+	ResponseFail
 )
 
 const (
@@ -227,7 +229,7 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 	m.Payload = data
 
 	switch msgID {
-	case SyncRequest:
+	case SyncRequest, ResponseOK, ResponseFail:
 		// just chill
 	case SyncResponse:
 		enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, 4)))
@@ -338,7 +340,7 @@ func (m *Message) Unmarshal(data []byte) error {
 	}
 
 	switch m.MsgID {
-	case SyncRequest:
+	case SyncRequest, ResponseOK, ResponseFail:
 	case SyncResponse:
 		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(rawPayload)))
 		defer d.Close()

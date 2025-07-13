@@ -3,6 +3,7 @@ package communication
 
 import (
 	"asvsoft/internal/pkg/proto"
+	"asvsoft/internal/pkg/utils"
 	"context"
 	"fmt"
 	"io"
@@ -11,15 +12,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
-type Measurer interface {
+type MeasureCloser interface {
+	io.Closer
 	Measure(ctx context.Context) (any, error)
-	Close() error
 }
 
-func NewSender(m Measurer, addr proto.ModuleID, mode proto.MessageID) *Sender {
+func NewSender(m MeasureCloser, addr proto.ModuleID, mode proto.MessageID) *Sender {
 	return &Sender{
 		m:    m,
 		addr: addr,
@@ -33,15 +35,21 @@ func (s *Sender) WithSleep(sleep time.Duration) *Sender {
 }
 
 type Sender struct {
-	m     Measurer
-	wc    io.WriteCloser
+	m     MeasureCloser
+	rwc   io.ReadWriteCloser
 	addr  proto.ModuleID
 	mode  proto.MessageID
 	sleep time.Duration
+	sync  bool
 }
 
-func (s *Sender) WithWritter(rw io.WriteCloser) *Sender {
-	s.wc = rw
+func (s *Sender) WithReadWriteCloser(rw io.ReadWriteCloser) *Sender {
+	s.rwc = rw
+	return s
+}
+
+func (s *Sender) WithSync(sync bool) *Sender {
+	s.sync = sync
 	return s
 }
 
@@ -109,14 +117,27 @@ func (s *Sender) Send(_ context.Context, data any) error {
 		return fmt.Errorf("cannot marshal msg: %w", err)
 	}
 
-	if s.wc == nil {
+	if s.rwc == nil {
 		log.Debugf("s.wc == nil: mock sending msg: %+v", msg)
 		return nil
 	}
 
-	_, err = s.wc.Write(b)
+	err = utils.RunWithRetries(func() error {
+		_, err := s.rwc.Write(b)
+		if err != nil {
+			return fmt.Errorf("cannot write measures: %w", err)
+		}
+
+		err = s.waitOK()
+		if err != nil {
+			return fmt.Errorf("failed to wait ok message: %w", err)
+		}
+
+		return nil
+	}, logrus.StandardLogger(), 2, 0)
+
 	if err != nil {
-		return fmt.Errorf("cannot write measures: %w", err)
+		return err
 	}
 
 	log.Debugf("raw sent msg: %+v", b)
@@ -127,10 +148,36 @@ func (s *Sender) Send(_ context.Context, data any) error {
 	return nil
 }
 
-func (s *Sender) Close() error {
-	if s.wc == nil {
+func (s *Sender) waitOK() error {
+	if !s.sync {
 		return nil
 	}
 
-	return s.wc.Close()
+	rawResp, err := proto.Read(s.rwc)
+	if err != nil {
+		return fmt.Errorf("failed to read ok message: %w", err)
+	}
+
+	var msg proto.Message
+
+	err = msg.Unmarshal(rawResp)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal message: %w", err)
+	}
+
+	if msg.MsgID != proto.ResponseOK {
+		return fmt.Errorf("response is not ok: %d", msg.MsgID)
+	}
+
+	log.Debugf("successfully got ok msg: %s", msg)
+
+	return nil
+}
+
+func (s *Sender) Close() error {
+	if s.rwc == nil {
+		return nil
+	}
+
+	return s.rwc.Close()
 }

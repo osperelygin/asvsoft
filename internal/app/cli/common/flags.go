@@ -27,6 +27,11 @@ func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
 	)
 
 	cmd.Flags().BoolVar(
+		&config.Sync, "dst-sync",
+		false, "wait ok message after sending own message",
+	)
+
+	cmd.Flags().BoolVar(
 		&config.TransmittingDisabled, "transmitting-disabled",
 		false, "disble transmitting to destination port",
 	)

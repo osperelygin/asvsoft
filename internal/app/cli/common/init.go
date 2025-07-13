@@ -66,7 +66,7 @@ func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communicat
 	}
 
 	var (
-		m    communication.Measurer
+		m    communication.MeasureCloser
 		addr proto.ModuleID
 	)
 
@@ -148,7 +148,9 @@ func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communicat
 		}
 
 		dstPort.SetLogger(log.StandardLogger())
-		sndr.WithWritter(dstPort).WithSleep(cfg.ControllerSerialPort.Sleep)
+		sndr.WithReadWriteCloser(dstPort).
+			WithSleep(cfg.ControllerSerialPort.Sleep).
+			WithSync(cfg.ControllerSerialPort.Sync)
 		sncr.WithReadWriter(dstPort)
 	}
 

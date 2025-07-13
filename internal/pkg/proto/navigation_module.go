@@ -25,6 +25,11 @@ type IMUData struct {
 	Mx, My, Mz int16
 }
 
+func (d IMUData) String() string {
+	type _IMUData IMUData
+	return fmt.Sprintf("%+v", _IMUData(d))
+}
+
 // GNSSData - данные ГНСС
 type GNSSData struct {
 	// UBX-NAVPOSLLH

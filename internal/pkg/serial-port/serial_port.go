@@ -21,17 +21,21 @@ type Wrapper struct {
 }
 
 type Config struct {
-	Port                 string        `yaml:"port" mapstructure:"port"`
-	BaudRate             int           `yaml:"baudrate" mapstructure:"baudrate"`
-	Timeout              time.Duration `yaml:"timeout" mapstructure:"timeout"`
+	Port     string        `yaml:"port" mapstructure:"port"`
+	BaudRate int           `yaml:"baudrate" mapstructure:"baudrate"`
+	Timeout  time.Duration `yaml:"timeout" mapstructure:"timeout"`
+	// Sync флаг включения функционала гаратнированной доставки сообщений. В случае конфига
+	// сервера - будут отправляться ok-сообщения, в случае конфига клиента - будет ожидание
+	// ok-сообщения от сервера.
+	Sync                 bool `yaml:"sync" mapstructure:"sync"`
 	TransmittingDisabled bool
 	Sleep                time.Duration
 }
 
 func (c Config) String() string {
 	return fmt.Sprintf(
-		"port: %q, baudrate: %d, timeout: %v, sleep: %v, transmitting_disabled: %v",
-		c.Port, c.BaudRate, c.Timeout, c.Sleep, c.TransmittingDisabled,
+		"port: %q, baudrate: %d, timeout: %v, sync: %v, sleep: %v, transmitting_disabled: %v",
+		c.Port, c.BaudRate, c.Timeout, c.Sync, c.Sleep, c.TransmittingDisabled,
 	)
 }
 

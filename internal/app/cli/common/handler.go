@@ -82,13 +82,15 @@ func ControllerHandler(moduleID proto.ModuleID) func(cmd *cobra.Command, args []
 
 			s := communication.NewSyncer(moduleID).WithReadWriter(srcPort)
 
-			r := communication.NewReceiver(srcPort)
+			r := communication.NewReceiver(srcPort, proto.RegistratorModuleID)
 			defer func() {
 				err = r.Close()
 				if err != nil {
 					log.Errorf("cannot close receiver: %v", err)
 				}
 			}()
+
+			r.SetSync(connectionCfg.Listener.Sync)
 
 			modules[name] = module{rcvr: r, sncr: s}
 		}
@@ -131,6 +133,8 @@ func receiving(
 	log := logger.Wrap(log.StandardLogger(), fmt.Sprintf("[%s]", moduleName))
 
 	log.Infof("starting receive message...")
+
+	module.rcvr.SetLogger(log)
 
 	for {
 		select {
