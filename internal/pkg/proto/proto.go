@@ -54,7 +54,7 @@ const (
 	moduleIDSize     = 1
 	msgIDSize        = 1
 	systemTimeSize   = 4
-	payloadBytesSize = 2
+	payloadBytesSize = 1
 	checkSumSize     = 1
 )
 
@@ -117,7 +117,7 @@ func ReadWithLimit(r io.Reader, limit int) ([]byte, error) {
 		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(svcBuff[payloadFirstByte-payloadBytesSize : payloadFirstByte])))
 		defer d.Close()
 
-		var payloadSize uint16
+		var payloadSize uint8
 
 		err := d.Decode(&payloadSize)
 		if err != nil {
@@ -176,7 +176,7 @@ func ReadWithLimitV2(r io.Reader, limit int) ([]byte, error) {
 		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(svcBuff[payloadFirstByte-payloadBytesSize : payloadFirstByte])))
 		defer d.Close()
 
-		var payloadSize uint16
+		var payloadSize uint8
 
 		err := d.Decode(&payloadSize)
 		if err != nil {
@@ -205,7 +205,7 @@ type Message struct {
 	ModuleID    ModuleID
 	MsgID       MessageID
 	SystemTime  uint32
-	PayloadSize uint16
+	PayloadSize uint8
 	Payload     any
 	CheckSum    uint8
 }
@@ -248,7 +248,7 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 		return nil, err
 	}
 
-	m.PayloadSize = uint16(len(rawPayload))
+	m.PayloadSize = uint8(len(rawPayload))
 	m.SystemTime = systemTime()
 
 	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+int(m.PayloadSize))))
