@@ -136,6 +136,12 @@ func (s *Sender) send(data any) error {
 		return nil
 	}
 
+	log.Debugf("sending raw msg: %+v", b)
+
+	if msg.ModuleID != proto.CameraModuleID {
+		log.Infof("sending msg: %s", msg)
+	}
+
 	err = utils.RunWithRetries(func() error {
 		_, err := s.rwc.Write(b)
 		if err != nil {
@@ -154,15 +160,12 @@ func (s *Sender) send(data any) error {
 		return err
 	}
 
-	log.Debugf("raw sent msg: %+v", b)
-	log.Infof("sent msg: %s", msg)
-
 	time.Sleep(s.sleep)
 
 	return nil
 }
 
-const chunkSize = 256
+const chunkSize = 250
 
 func (s *Sender) chunkedSend(data any) error {
 	cameraData, ok := data.(*proto.CameraData)
@@ -181,15 +184,21 @@ func (s *Sender) chunkedSend(data any) error {
 		start := (i - 1) * chunkSize
 		end := min(i*chunkSize, len(rawImage))
 
-		err := s.send(&proto.CameraData{
+		msg := &proto.CameraData{
 			RawImagePart:  rawImage[start:end],
 			CurrentChunck: uint8(i),
 			TotalChunckes: uint8(chunkes),
-		})
+		}
+
+		log.Debugf("sending msg %s", msg)
+
+		err := s.send(msg)
 		if err != nil {
 			return fmt.Errorf("failed to send #%d chunk, drop package: %w", i, err)
 		}
 	}
+
+	log.Debugf("sent image with size: %d", len(rawImage))
 
 	return nil
 }
