@@ -1,3 +1,17 @@
+"""
+registrator.py
+
+Prerequisites:
+
+python3 -m venv .venv && source .venv/bin/activate && pip3 install picamera2 pillow numpy
+
+Usage:
+
+python3 registrator.py sleep=1 baudrate=(480, 360)
+
+"""
+
+
 from picamera2 import Picamera2
 from PIL import Image
 from io import BytesIO
@@ -11,10 +25,11 @@ import signal
 import os
 
 class Registrator:
-    def __init__(self, socket_path='/tmp/camera.sock', resolution=(160, 120)):
+    def __init__(self, socket_path='/tmp/camera.sock', resolution=(480, 360), sleep=1):
         self.socket_path = socket_path
         self.running = True
         self.sock = None
+        self.sleep = sleep
         
         # Регистрируем обработчики сигналов
         signal.signal(signal.SIGTERM, self.handle_signal)
@@ -60,14 +75,14 @@ class Registrator:
                 return True
             except socket.error as e:
                 print(f"Connection error: {e}, retrying...")
-                time.sleep(1)
+                time.sleep(self.sleep)
         return False
     
     def send_data(self, data):
         """Отправляем данные через сокет"""
         try:
             self.sock.sendall(data)
-            print(f"Sent: {data}")
+            print(f"Sent data len: {len(data)}")
         except socket.error as e:
             print(f"Send error: {e}, reconnecting...")
             self.sock.close()
@@ -82,7 +97,7 @@ class Registrator:
             try:
                 data = self.take_monochrome_image()
                 self.send_data(data)
-                time.sleep(1)
+                time.sleep(self.sleep)
             except KeyboardInterrupt:
                 self.running = False
         
@@ -103,7 +118,14 @@ class Registrator:
 
         return jpeg_bytes
 
+def main(**kwargs):
+    sleep = float(kwargs.get("sleep", 1))
+    resolution = kwargs.get("resolution", (480, 360))
+
+    sender = Registrator(sleep=sleep, resolution=resolution)
+    sender.run()
+
+
 
 if __name__ == "__main__":
-    sender = Registrator()
-    sender.run()
+    main(**dict(arg.split("=") for arg in sys.argv[1:]))

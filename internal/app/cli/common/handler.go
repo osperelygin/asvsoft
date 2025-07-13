@@ -183,7 +183,7 @@ func handleCameraRegistratorMsg(log logger.Logger, msg proto.Message) error {
 
 	fileName := fmt.Sprintf("camera_%d.jpeg", msg.SystemTime)
 
-	err := os.WriteFile(fileName, payload.RawImage, 0666)
+	err := os.WriteFile(fileName, payload.RawImagePart, 0666)
 	if err != nil {
 		return fmt.Errorf("failed to write image to file: %w", err)
 	}

@@ -9,13 +9,11 @@ import (
 	"io"
 	"net"
 	"os"
-	"time"
 )
 
 const (
 	defaultSocketPath    = "/tmp/camera.sock"
-	defaultSocketTimeout = time.Second
-	defaultMsgBufferSize = 320 * 240
+	defaultMsgBufferSize = 1 << 16
 )
 
 var (
@@ -92,5 +90,5 @@ func (c *Camera) measure() (*proto.CameraData, error) {
 
 	c.log.Debugf("successfully read %d bytes", n)
 
-	return &proto.CameraData{RawImage: msgBuffer[:n]}, nil
+	return &proto.CameraData{RawImagePart: msgBuffer[:n]}, nil
 }

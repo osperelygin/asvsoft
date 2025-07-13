@@ -98,7 +98,7 @@ LOOP:
 			cancel()
 			break LOOP
 		case measure := <-measureChan:
-			err := s.Send(ctx, measure)
+			err := s.Send(measure)
 			if err != nil {
 				log.Errorf("cannot transmit measure: %v", err)
 			}
@@ -108,8 +108,22 @@ LOOP:
 	return nil
 }
 
+var (
+	chunkedRequestModules = map[proto.ModuleID]bool{
+		proto.CameraModuleID: true,
+	}
+)
+
 // Send упаковывает измерения согласно унифицированному протоколу и отправляет пакет в s.rw.
-func (s *Sender) Send(_ context.Context, data any) error {
+func (s *Sender) Send(data any) error {
+	if chunkedRequestModules[s.addr] {
+		return s.chunkedSend(data)
+	}
+
+	return s.send(data)
+}
+
+func (s *Sender) send(data any) error {
 	var msg proto.Message
 
 	b, err := msg.Marshal(data, s.addr, s.mode)
@@ -144,6 +158,38 @@ func (s *Sender) Send(_ context.Context, data any) error {
 	log.Infof("sent msg: %s", msg)
 
 	time.Sleep(s.sleep)
+
+	return nil
+}
+
+const chunkSize = 256
+
+func (s *Sender) chunkedSend(data any) error {
+	cameraData, ok := data.(*proto.CameraData)
+	if !ok {
+		return fmt.Errorf("unexpected data")
+	}
+
+	rawImage := cameraData.RawImagePart
+
+	chunkes := len(rawImage) / chunkSize
+	if len(rawImage)%chunkSize != 0 {
+		chunkes++
+	}
+
+	for i := 1; i <= chunkes; i++ {
+		start := (i - 1) * chunkSize
+		end := min(i*chunkSize, len(rawImage))
+
+		err := s.send(&proto.CameraData{
+			RawImagePart:  rawImage[start:end],
+			CurrentChunck: uint8(i),
+			TotalChunckes: uint8(chunkes),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to send #%d chunk, drop package: %w", i, err)
+		}
+	}
 
 	return nil
 }

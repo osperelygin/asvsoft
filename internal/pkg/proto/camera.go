@@ -10,15 +10,16 @@ import (
 // CameraData - данные, полученные после обработки модуля камеры
 type CameraData struct {
 	// Углы ориентации в 0.0001 град
-	Yaw, Pitch, Roll int16
-	// RawImage сырое кодированное изображение
-	RawImage []byte
+	Yaw, Pitch, Roll             int16
+	CurrentChunck, TotalChunckes uint8
+	// RawImagePart сырое кодированное изображение
+	RawImagePart []byte
 }
 
 func (cd CameraData) String() string {
 	return fmt.Sprintf(
-		"{Yaw:%d,Pitch:%d,Roll:%d,RawImageLen:%d}",
-		cd.Yaw, cd.Pitch, cd.Roll, len(cd.RawImage),
+		"{Yaw:%d,Pitch:%d,Roll:%d,RawImageLen:%d,CurrentChunck:%d,TotalChunckes:%d}",
+		cd.Yaw, cd.Pitch, cd.Roll, len(cd.RawImagePart), cd.CurrentChunck, cd.TotalChunckes,
 	)
 }
 
@@ -29,28 +30,29 @@ const (
 func packCameraData(in *CameraData, msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
-		res []byte
 		err error
 	)
 
 	switch msgID {
 	case WritingModeA:
 		buf = bytes.NewBuffer(make([]byte, 0, cameraDataSizeModeA))
-		enc := encoder.NewEncoder(buf)
 
-		err = enc.Encode(in.Yaw, in.Pitch, in.Roll)
+		err = encoder.NewEncoder(buf).Encode(in.Yaw, in.Pitch, in.Roll)
 		if err != nil {
 			return nil, err
 		}
-
-		res = buf.Bytes()
 	case WritingModeB:
-		res = in.RawImage
+		buf = bytes.NewBuffer(make([]byte, 0, len(in.RawImagePart)+2))
+
+		err = encoder.NewEncoder(buf).Encode(in.CurrentChunck, in.TotalChunckes, in.RawImagePart)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}
 
-	return res, err
+	return buf.Bytes(), err
 }
 
 func unpackCameraData(in []byte, msgID MessageID) (out *CameraData, err error) {
@@ -65,7 +67,14 @@ func unpackCameraData(in []byte, msgID MessageID) (out *CameraData, err error) {
 			return nil, err
 		}
 	case WritingModeB:
-		out.RawImage = in
+		dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
+
+		out.RawImagePart = make([]byte, len(in)-2)
+
+		err = dec.Decode(&out.CurrentChunck, &out.TotalChunckes, &out.RawImagePart)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}

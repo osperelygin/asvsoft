@@ -14,7 +14,7 @@ func TestPackCameraDataSuccess(t *testing.T) {
 		rawImage, err := os.ReadFile("testdata/1752339024.jpeg")
 		require.NoError(t, err)
 
-		cameraData := &CameraData{RawImage: rawImage}
+		cameraData := &CameraData{RawImagePart: rawImage}
 
 		msgBytes, err := sentMsg.Marshal(cameraData, CameraModuleID, WritingModeB)
 		require.NoError(t, err)

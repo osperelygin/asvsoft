@@ -33,6 +33,46 @@ func (r *Receiver) SetLogger(log logger.Logger) {
 
 // Receive читает данный из r.rc и распаковывает пакет в сообщение.
 func (r *Receiver) Receive() (proto.Message, error) {
+	msg, err := r.receive()
+	if err != nil {
+		return msg, err
+	}
+
+	// TODO: унести в отдельный метод
+	if msg.ModuleID == proto.CameraModuleID && msg.MsgID == proto.WritingModeB {
+		payload, ok := msg.Payload.(*proto.CameraData)
+		if !ok {
+			return msg, fmt.Errorf("failed to handle chunked message: unexpected type")
+		}
+
+		rawImage := make([]byte, 0, int(payload.TotalChunckes)*chunkSize)
+		rawImage = append(rawImage, payload.RawImagePart...)
+
+		for payload.CurrentChunck < payload.TotalChunckes {
+			msg, err := r.receive()
+			if err != nil {
+				return msg, err
+			}
+
+			r.log.Debugf("received chunked message: %s", msg)
+
+			payload, ok = msg.Payload.(*proto.CameraData)
+			if !ok {
+				return msg, fmt.Errorf("failed to handle chunked message: unexpected type")
+			}
+
+			rawImage = append(rawImage, payload.RawImagePart...)
+		}
+
+		msg.Payload = &proto.CameraData{RawImagePart: rawImage}
+		msg.CheckSum = 0
+		msg.PayloadSize = 0
+	}
+
+	return msg, err
+}
+
+func (r *Receiver) receive() (proto.Message, error) {
 	var (
 		msg proto.Message
 		err error
