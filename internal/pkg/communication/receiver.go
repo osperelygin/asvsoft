@@ -98,7 +98,7 @@ func (r *Receiver) receive() (proto.Message, error) {
 		}
 
 		return nil
-	}, r.log, 2, 0)
+	}, r.log, chunkRetriesLimit, 0)
 
 	return msg, err
 }

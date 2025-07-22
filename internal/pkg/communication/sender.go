@@ -154,7 +154,7 @@ func (s *Sender) send(data any) error {
 		}
 
 		return nil
-	}, logrus.StandardLogger(), 2, 0)
+	}, logrus.StandardLogger(), chunkRetriesLimit, 0)
 
 	if err != nil {
 		return err
@@ -165,7 +165,10 @@ func (s *Sender) send(data any) error {
 	return nil
 }
 
-const chunkSize = 250
+const (
+	chunkSize         = 250
+	chunkRetriesLimit = 10
+)
 
 func (s *Sender) chunkedSend(data any) error {
 	cameraData, ok := data.(*proto.CameraData)
@@ -198,7 +201,7 @@ func (s *Sender) chunkedSend(data any) error {
 		}
 	}
 
-	log.Debugf("sent image with size: %d", len(rawImage))
+	log.Infof("sent image with size: %d", len(rawImage))
 
 	return nil
 }
