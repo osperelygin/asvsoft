@@ -9,26 +9,42 @@ import (
 )
 
 type Receiver struct {
-	rwc      io.ReadWriteCloser
-	moduleID proto.ModuleID
-	sync     bool
-	log      logger.Logger
+	rwc          io.ReadWriteCloser
+	moduleID     proto.ModuleID
+	sync         bool
+	chunkSize    int
+	retriesLimit int
+	log          logger.Logger
 }
 
 func NewReceiver(rwc io.ReadWriteCloser, moduleID proto.ModuleID) *Receiver {
 	return &Receiver{
-		rwc:      rwc,
-		moduleID: moduleID,
-		log:      logger.DummyLogger{},
+		rwc:          rwc,
+		moduleID:     moduleID,
+		log:          logger.DummyLogger{},
+		chunkSize:    DefaultChunkSize,
+		retriesLimit: DefaultRetriesLimit,
 	}
 }
 
-func (r *Receiver) SetSync(sync bool) {
-	r.sync = sync
+func (r *Receiver) WithChunkSize(chunkSize int) *Receiver {
+	r.chunkSize = chunkSize
+	return r
 }
 
-func (r *Receiver) SetLogger(log logger.Logger) {
+func (r *Receiver) WithRetriesLimit(retriesLimit int) *Receiver {
+	r.retriesLimit = retriesLimit
+	return r
+}
+
+func (r *Receiver) WithSync(sync bool) *Receiver {
+	r.sync = sync
+	return r
+}
+
+func (r *Receiver) WithLogger(log logger.Logger) *Receiver {
 	r.log = log
+	return r
 }
 
 // Receive читает данный из r.rc и распаковывает пакет в сообщение.
@@ -45,7 +61,7 @@ func (r *Receiver) Receive() (proto.Message, error) {
 			return msg, fmt.Errorf("failed to handle chunked message: unexpected type")
 		}
 
-		rawImage := make([]byte, 0, int(payload.TotalChunckes)*chunkSize)
+		rawImage := make([]byte, 0, int(payload.TotalChunckes)*r.chunkSize)
 		rawImage = append(rawImage, payload.RawImagePart...)
 
 		for payload.CurrentChunck < payload.TotalChunckes {
@@ -98,7 +114,7 @@ func (r *Receiver) receive() (proto.Message, error) {
 		}
 
 		return nil
-	}, r.log, chunkRetriesLimit, 0)
+	}, r.log, r.retriesLimit, 0)
 
 	return msg, err
 }

@@ -12,20 +12,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
-type MeasureCloser interface {
-	io.Closer
-	Measure(ctx context.Context) (any, error)
-}
-
 func NewSender(m MeasureCloser, addr proto.ModuleID, mode proto.MessageID) *Sender {
 	return &Sender{
-		m:    m,
-		addr: addr,
-		mode: mode,
+		m:            m,
+		addr:         addr,
+		mode:         mode,
+		chunkSize:    DefaultChunkSize,
+		retriesLimit: DefaultRetriesLimit,
 	}
 }
 
@@ -34,13 +30,25 @@ func (s *Sender) WithSleep(sleep time.Duration) *Sender {
 	return s
 }
 
+func (s *Sender) WithChunkSize(chunkSize int) *Sender {
+	s.chunkSize = chunkSize
+	return s
+}
+
+func (s *Sender) WithRetriesLimit(retriesLimit int) *Sender {
+	s.retriesLimit = retriesLimit
+	return s
+}
+
 type Sender struct {
-	m     MeasureCloser
-	rwc   io.ReadWriteCloser
-	addr  proto.ModuleID
-	mode  proto.MessageID
-	sleep time.Duration
-	sync  bool
+	m            MeasureCloser
+	rwc          io.ReadWriteCloser
+	addr         proto.ModuleID
+	mode         proto.MessageID
+	sleep        time.Duration
+	chunkSize    int
+	retriesLimit int
+	sync         bool
 }
 
 func (s *Sender) WithReadWriteCloser(rw io.ReadWriteCloser) *Sender {
@@ -154,7 +162,7 @@ func (s *Sender) send(data any) error {
 		}
 
 		return nil
-	}, logrus.StandardLogger(), chunkRetriesLimit, 0)
+	}, log.StandardLogger(), s.retriesLimit, 0)
 
 	if err != nil {
 		return err
@@ -165,11 +173,6 @@ func (s *Sender) send(data any) error {
 	return nil
 }
 
-const (
-	chunkSize         = 250
-	chunkRetriesLimit = 10
-)
-
 func (s *Sender) chunkedSend(data any) error {
 	cameraData, ok := data.(*proto.CameraData)
 	if !ok {
@@ -178,14 +181,14 @@ func (s *Sender) chunkedSend(data any) error {
 
 	rawImage := cameraData.RawImagePart
 
-	chunkes := len(rawImage) / chunkSize
-	if len(rawImage)%chunkSize != 0 {
+	chunkes := len(rawImage) / s.chunkSize
+	if len(rawImage)%s.chunkSize != 0 {
 		chunkes++
 	}
 
 	for i := 1; i <= chunkes; i++ {
-		start := (i - 1) * chunkSize
-		end := min(i*chunkSize, len(rawImage))
+		start := (i - 1) * s.chunkSize
+		end := min(i*s.chunkSize, len(rawImage))
 
 		msg := &proto.CameraData{
 			RawImagePart:  rawImage[start:end],

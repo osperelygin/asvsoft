@@ -14,13 +14,13 @@ import (
 type ModuleConfig struct {
 	SensorSerialPort      *serialport.Config
 	ControllerSerialPort  *serialport.Config
-	RegestratorSerialPort *serialport.Config
+	RegistratorSerialPort *serialport.Config
 	NeoM8t                *neom8t.Config
 	Imu                   *sensehat.ImuConfig
 }
 
 type ControllerConfig struct {
-	Modules map[string]ModuleConnectionConfig `yaml:"modules" mapstructure:"modules"`
+	Modules map[string]*ModuleConnectionConfig `yaml:"modules" mapstructure:"modules"`
 }
 
 type ModuleConnectionConfig struct {
@@ -41,7 +41,6 @@ func NewControllerConfig(cfgPath string) (*ControllerConfig, error) {
 
 	v.SetConfigType("yaml")
 	v.SetConfigFile(cfgPath)
-	v.WatchConfig()
 
 	err := v.ReadInConfig()
 	if err != nil {
@@ -53,6 +52,14 @@ func NewControllerConfig(cfgPath string) (*ControllerConfig, error) {
 	err = v.Unmarshal(&cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	for _, c := range cfg.Modules {
+		if c.Listener == nil {
+			continue
+		}
+
+		c.Listener.SetDefaults()
 	}
 
 	return &cfg, nil

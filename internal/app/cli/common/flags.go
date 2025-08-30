@@ -2,6 +2,7 @@
 package common
 
 import (
+	"asvsoft/internal/pkg/communication"
 	serialport "asvsoft/internal/pkg/serial-port"
 	"strings"
 	"time"
@@ -29,6 +30,16 @@ func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
 	cmd.Flags().BoolVar(
 		&config.Sync, "dst-sync",
 		true, "wait ok message after sending own message",
+	)
+
+	cmd.Flags().IntVar(
+		&config.ChunkSize, "dst-chunk-size",
+		communication.DefaultChunkSize, "wait ok message after sending own message",
+	)
+
+	cmd.Flags().IntVar(
+		&config.ChunkSize, "dst-retries-limit",
+		communication.DefaultRetriesLimit, "wait ok message after sending own message",
 	)
 
 	cmd.Flags().BoolVar(

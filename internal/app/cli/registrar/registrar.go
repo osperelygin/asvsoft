@@ -8,14 +8,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	ctrlCfgPath *string
+)
+
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "registrar",
 		Short: "Бортовой регистратор",
-		RunE:  common.ControllerHandler(proto.RegistratorModuleID),
+		RunE:  common.ControllerHandler(proto.RegistratorModuleID, ctrlCfgPath),
 	}
 	cmd.Flags().StringVarP(
-		&common.CtrlCfgPath, "config", "c",
+		ctrlCfgPath, "config", "c",
 		"/etc/asvsoft/config.yaml",
 		"Path to config",
 	)

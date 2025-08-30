@@ -2,6 +2,7 @@
 package serialport
 
 import (
+	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/logger"
 	"errors"
 	"fmt"
@@ -24,12 +25,24 @@ type Config struct {
 	Port     string        `yaml:"port" mapstructure:"port"`
 	BaudRate int           `yaml:"baudrate" mapstructure:"baudrate"`
 	Timeout  time.Duration `yaml:"timeout" mapstructure:"timeout"`
-	// Sync флаг включения функционала гаратнированной доставки сообщений. В случае конфига
+	// Sync флаг включения функционала гарантированной доставки сообщений. В случае конфига
 	// сервера - будут отправляться ok-сообщения, в случае конфига клиента - будет ожидание
 	// ok-сообщения от сервера.
 	Sync                 bool `yaml:"sync" mapstructure:"sync"`
+	ChunkSize            int  `yaml:"chunk_size" mapstructure:"chunk_size"`
+	RetriesLimit         int  `yaml:"retries_limit" mapstructure:"retries_limit"`
 	TransmittingDisabled bool
 	Sleep                time.Duration
+}
+
+func (c *Config) SetDefaults() {
+	if c.ChunkSize == 0 {
+		c.ChunkSize = communication.DefaultChunkSize
+	}
+
+	if c.RetriesLimit == 0 {
+		c.RetriesLimit = communication.DefaultRetriesLimit
+	}
 }
 
 func (c Config) String() string {

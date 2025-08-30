@@ -148,9 +148,14 @@ func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communicat
 		}
 
 		dstPort.SetLogger(log.StandardLogger())
+
+		// TODO: научиться конфигурировать несколько destination'ов (контроллер, регистратор)
 		sndr.WithReadWriteCloser(dstPort).
 			WithSleep(cfg.ControllerSerialPort.Sleep).
-			WithSync(cfg.ControllerSerialPort.Sync)
+			WithSync(cfg.ControllerSerialPort.Sync).
+			WithChunkSize(cfg.ControllerSerialPort.ChunkSize).
+			WithRetriesLimit(cfg.ControllerSerialPort.RetriesLimit)
+
 		sncr.WithReadWriter(dstPort)
 	}
 

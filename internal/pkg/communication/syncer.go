@@ -3,6 +3,7 @@ package communication
 import (
 	"asvsoft/internal/pkg/logger"
 	"asvsoft/internal/pkg/proto"
+	"asvsoft/internal/pkg/utils"
 	"fmt"
 	"io"
 	"os"
@@ -12,8 +13,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	DefaultSyncerRetries = 10
+	DefaultSyncerSleep   = 500 * time.Millisecond
+)
+
 func NewSyncer(moduleID proto.ModuleID) *Syncer {
-	return &Syncer{moduleID: moduleID}
+	return &Syncer{
+		moduleID: moduleID,
+		retries:  DefaultSyncerRetries,
+		sleep:    DefaultSyncerSleep,
+	}
 }
 
 // Syncer осуществляется синхронизацию системного времени между модулем и контроллером управления.
@@ -22,6 +32,8 @@ func NewSyncer(moduleID proto.ModuleID) *Syncer {
 type Syncer struct {
 	moduleID proto.ModuleID
 	rw       io.ReadWriter
+	retries  int
+	sleep    time.Duration
 }
 
 func (s *Syncer) WithReadWriter(rw io.ReadWriter) *Syncer {
@@ -29,28 +41,39 @@ func (s *Syncer) WithReadWriter(rw io.ReadWriter) *Syncer {
 	return s
 }
 
-// Sync осуществляет синхронизацию системного времении. При установленом s.rw отправляет
+func (s *Syncer) WithRetries(retries int) *Syncer {
+	s.retries = retries
+	return s
+}
+
+func (s *Syncer) WithSleep(sleep time.Duration) *Syncer {
+	s.sleep = sleep
+	return s
+}
+
+// SyncSystemTime осуществляет синхронизацию системного времении. При установленом s.rw отправляет
 // запрос синхронизации и назначает систменое время из полученного ответа. При неустановленном
 // s.rw пытается получить начало отсчета системношго времи из START_STAMP, если переменная
 // не установлена, то назчает в качестве начало отсчета время запуска утилиты на модуле.
-func (s *Syncer) Sync() error {
-	if s.rw == nil {
-		log.Traceln("rw == nil: try getting START_STAMP env var")
+func (s *Syncer) SyncSystemTime() error {
+	setStartStampFn := func(startStamp uint32, srcStartStamp string) {
+		proto.SetStartStamp(startStamp)
+		log.Infof("time was synced from %s, start stamp: %d", srcStartStamp, startStamp)
+	}
 
+	if s.rw == nil {
 		startStampStr := os.Getenv("START_STAMP")
 		if startStampStr == "" {
-			log.Tracef("START_STAMP is not set, use CLI start stamp: %d", proto.GetStartStamp())
+			setStartStampFn(proto.GetStartStamp(), "cli_start_time")
 			return nil
 		}
 
-		startStamp, err := strconv.ParseInt(startStampStr, 10, 64)
+		startStampInt, err := strconv.ParseInt(startStampStr, 10, 64)
 		if err != nil {
-			return fmt.Errorf("cannot parse start stamp %q: %w", startStampStr, err)
+			return fmt.Errorf("bad start stamp from env var: %w", err)
 		}
 
-		proto.SetStartStamp(uint32(startStamp))
-
-		log.Tracef("start stamp set to %d", startStamp)
+		setStartStampFn(uint32(startStampInt), "env_var")
 
 		return nil
 	}
@@ -62,96 +85,41 @@ func (s *Syncer) Sync() error {
 		return fmt.Errorf("cannot marshal msg: %w", err)
 	}
 
-	const syncRequestRetries = 10
+	var startStamp uint32
 
-	for retry := range syncRequestRetries {
-		log := logger.Wrap(
-			log.StandardLogger(),
-			fmt.Sprintf("[retry #%d]", retry),
-		)
-
-		log.Tracef("writing sync request...")
-
-		_, err = s.rw.Write(b)
+	err = utils.RunWithRetries(func() error {
+		_, err := s.rw.Write(b)
 		if err != nil {
-			log.Errorf("cannot write measures: %v", err)
-			continue
+			return fmt.Errorf("cannot write measures: %v", err)
 		}
 
-		log.Debugf("raw sync request: %+v", b)
-		log.Debugf("sync request: %+v", req)
-
-		time.Sleep(500 * time.Millisecond)
-
-		log.Tracef("reading sync response...")
-
-		var rawResp []byte
-
-		rawResp, err = proto.Read(s.rw)
+		rawResp, err := proto.Read(s.rw)
 		if err != nil {
-			log.Errorf("cannot read response: %v", err)
-			continue
+			return fmt.Errorf("cannot read response: %v", err)
 		}
 
 		var resp proto.Message
 
 		err = resp.Unmarshal(rawResp)
 		if err != nil {
-			log.Errorf("unmarshal msg failed: %v", err)
-			continue
+			return fmt.Errorf("unmarshal msg failed: %v", err)
 		}
-
-		log.Debugf("raw sync response: %+v", rawResp)
-		log.Debugf("sync response: %+v", resp)
 
 		if resp.MsgID != proto.SyncResponse {
-			log.Errorf("unexpected msgID: %#X", resp.MsgID)
-			continue
+			return fmt.Errorf("unexpected msgID: %#X", resp.MsgID)
 		}
 
-		startStamp := resp.Payload.(uint32)
-		proto.SetStartStamp(startStamp)
+		startStamp = resp.Payload.(uint32)
 
-		log.Infof("time was synced, start stamp: %d", startStamp)
-
-		break
-	}
-
+		return nil
+	}, logger.Wrap(log.StandardLogger(), "[syncer]"), s.retries, s.sleep)
 	if err != nil {
-		return fmt.Errorf("failed to sync: %w", err)
+		return fmt.Errorf("failed to get start time from remote: %w", err)
 	}
+
+	setStartStampFn(startStamp, "remote")
 
 	return nil
-}
-
-// Serve ожидает запрос синхронизации, возвращает в ответе начало отсчета системного времени.
-// Запускается только на контроллере управления.
-func (s *Syncer) Serve() error {
-	if s.rw == nil {
-		log.Traceln("skipping serve: rw == nil")
-		return nil
-	}
-
-	log.Traceln("reading sync request...")
-
-	rawReq, err := proto.Read(s.rw)
-	if err != nil {
-		return fmt.Errorf("cannot read req: %w", err)
-	}
-
-	var req proto.Message
-
-	err = req.Unmarshal(rawReq)
-	if err != nil {
-		return fmt.Errorf("unmarshal req failed: %v", err)
-	}
-
-	log.Debugf("raw sync request: %+v", rawReq)
-	log.Debugf("sync request: %+v", req)
-
-	_, err = s.ProcessSyncRequest(req)
-
-	return err
 }
 
 func (s *Syncer) ProcessSyncRequest(req proto.Message) (proto.Message, error) {

@@ -12,10 +12,10 @@ import (
 	"os/signal"
 
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
+// TODO: найти другой способ конфигурации send mode
 type ModuleOptions struct {
 	SendMode proto.MessageID
 }
@@ -30,7 +30,7 @@ func ModuleHandler(cfg *config.ModuleConfig, mode RunMode, opts ...ModuleOptions
 			return err
 		}
 
-		err = sncr.Sync()
+		err = sncr.SyncSystemTime()
 		if err != nil {
 			return fmt.Errorf("cannot sync: %v", err)
 		}
@@ -44,21 +44,17 @@ func ModuleHandler(cfg *config.ModuleConfig, mode RunMode, opts ...ModuleOptions
 	}
 }
 
-var (
-	CtrlCfgPath string
-)
-
 type module struct {
 	rcvr *communication.Receiver
 	sncr *communication.Syncer
 }
 
 // ControllerHandler ...
-func ControllerHandler(moduleID proto.ModuleID) func(cmd *cobra.Command, args []string) error {
+func ControllerHandler(moduleID proto.ModuleID, ctrlCfgPath *string) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log := logger.Wrap(log.StandardLogger(), "[main]")
+		log := logger.Wrap(logrus.StandardLogger(), "[main]")
 
-		ctrlCfg, err := config.NewControllerConfig(CtrlCfgPath)
+		ctrlCfg, err := config.NewControllerConfig(*ctrlCfgPath)
 		if err != nil {
 			return fmt.Errorf("failed to get controller config: %w", err)
 		}
@@ -66,33 +62,35 @@ func ControllerHandler(moduleID proto.ModuleID) func(cmd *cobra.Command, args []
 		moduleCfg := ctrlCfg.Modules
 		modules := make(map[string]module, len(moduleCfg))
 
-		for name, connectionCfg := range moduleCfg {
-			if !connectionCfg.Enabled {
+		for name, connCfg := range moduleCfg {
+			if !connCfg.Enabled {
 				continue
 			}
 
-			srcPort, err := serialport.New(connectionCfg.Listener)
+			srcPort, err := serialport.New(connCfg.Listener)
 			if err != nil {
-				return fmt.Errorf("cannot open serial port %s: %w", connectionCfg.Listener, err)
+				return fmt.Errorf("cannot open serial port %s: %w", connCfg.Listener, err)
 			}
 
 			srcPort.SetLogger(logger.Wrap(logrus.StandardLogger(), fmt.Sprintf("[%s]", name)))
 
-			log.Debugf("successfull create serail port: %s", connectionCfg.Listener)
+			log.Debugf("successfull create serail port: %s", connCfg.Listener)
 
-			s := communication.NewSyncer(moduleID).WithReadWriter(srcPort)
+			sncr := communication.NewSyncer(moduleID).WithReadWriter(srcPort)
 
-			r := communication.NewReceiver(srcPort, proto.RegistratorModuleID)
+			rcvr := communication.NewReceiver(srcPort, moduleID).
+				WithSync(connCfg.Listener.Sync).
+				WithChunkSize(connCfg.Listener.ChunkSize).
+				WithRetriesLimit(connCfg.Listener.RetriesLimit)
+
 			defer func() {
-				err = r.Close()
+				err = rcvr.Close()
 				if err != nil {
 					log.Errorf("cannot close receiver: %v", err)
 				}
 			}()
 
-			r.SetSync(connectionCfg.Listener.Sync)
-
-			modules[name] = module{rcvr: r, sncr: s}
+			modules[name] = module{rcvr: rcvr, sncr: sncr}
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -130,11 +128,11 @@ func receiving(
 	module module,
 	closeChannel chan struct{},
 ) {
-	log := logger.Wrap(log.StandardLogger(), fmt.Sprintf("[%s]", moduleName))
+	log := logger.Wrap(logrus.StandardLogger(), fmt.Sprintf("[%s]", moduleName))
 
 	log.Infof("starting receive message...")
 
-	module.rcvr.SetLogger(log)
+	module.rcvr.WithLogger(log)
 
 	for {
 		select {
