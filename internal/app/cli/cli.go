@@ -2,15 +2,14 @@
 package cli
 
 import (
-	"asvsoft/internal/app/cli/camera"
-	"asvsoft/internal/app/cli/check"
-	"asvsoft/internal/app/cli/controller"
-	depthmeter "asvsoft/internal/app/cli/depth-meter"
-	"asvsoft/internal/app/cli/lidar"
-	"asvsoft/internal/app/cli/navigation"
-	neom8t "asvsoft/internal/app/cli/neo-m8t"
-	"asvsoft/internal/app/cli/registrar"
-	sensehat "asvsoft/internal/app/cli/sense-hat"
+	"asvsoft/internal/app/cli/command/camera"
+	"asvsoft/internal/app/cli/command/check"
+	"asvsoft/internal/app/cli/command/controller"
+	depthmeter "asvsoft/internal/app/cli/command/depth-meter"
+	"asvsoft/internal/app/cli/command/lidar"
+	neom8t "asvsoft/internal/app/cli/command/neo-m8t"
+	"asvsoft/internal/app/cli/command/registrar"
+	sensehat "asvsoft/internal/app/cli/command/sense-hat"
 	"asvsoft/internal/app/ctxutils"
 	"os"
 	"time"
@@ -36,7 +35,6 @@ func RootCmd() *cobra.Command {
 	rootCmd.AddCommand(
 		controller.Cmd(),
 		depthmeter.Cmd(),
-		navigation.Cmd(),
 		lidar.Cmd(),
 		neom8t.Cmd(),
 		sensehat.Cmd(),

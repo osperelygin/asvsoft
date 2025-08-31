@@ -1,0 +1,97 @@
+version: 3
+workdir: ./
+allow:
+  depOnAnyVendor: true
+
+excludeFiles:
+  - "^.*_test\\.go$"
+  - "^.*\/test\/.*$"
+
+components:
+  main: { in: cmd/* }
+  app: { in: internal/app }
+  cli: { in: internal/app/cli }
+  cli-common: { in: internal/app/cli/common }
+  command: { in: internal/app/cli/command/* }
+  config: { in: internal/app/config }
+  ctxutils: { in: internal/app/ctxutils }
+  ds: { in: internal/app/ds }
+  sensors: { in: internal/app/sensors/* }
+  common: { in: internal/pkg/common }
+  communication: { in: internal/pkg/communication }
+  encoder: { in: internal/pkg/encoder }
+  logger: { in: internal/pkg/logger }
+  proto: { in: internal/pkg/proto }
+  serial-port: { in: internal/pkg/serial-port }
+  utils: { in: internal/pkg/utils }
+  crc8: { in: pkg/crc8 }
+
+# commonComponents: 
+#   - utils
+
+deps:
+  main:
+    mayDependOn:
+      - app
+      - ds
+  app:
+    mayDependOn:
+      - cli
+      - ctxutils
+      - ds
+  cli:
+    mayDependOn:
+      - command
+      - ctxutils
+  cli-common:
+    mayDependOn:
+      - config
+      - sensors
+      - communication
+      - logger
+      - proto
+      - serial-port
+  command:
+    mayDependOn:
+      - cli-common
+      - config
+      - proto
+      - sensors
+  config:
+    mayDependOn:
+      - sensors
+      - serial-port
+  ctxutils:
+    mayDependOn:
+      - ds
+  # ds:
+  #   mayDependOn:
+  sensors:
+    mayDependOn:
+      - encoder
+      - proto
+      - logger
+      - serial-port
+  # common:
+  #   mayDependOn:
+  communication:
+    mayDependOn:
+      - logger
+      - proto
+      - utils
+      - serial-port
+  encoder:
+    mayDependOn:
+      - common
+  proto:
+    mayDependOn:
+      - common
+      - encoder
+      - crc8
+  serial-port:
+    mayDependOn:
+      - logger
+      - communication # FIXME
+  utils:
+    mayDependOn:
+      - logger

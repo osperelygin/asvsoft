@@ -17,6 +17,8 @@ LAST_COMMIT_HASH = $(shell git rev-parse HEAD | cut -c -8)
 LD_FLAGS := "-X 'main.BuildTime=$(BUILD_DATE)' -X 'main.BuildCommit=$(LAST_COMMIT_HASH)' -X 'main.BuildBranch=$(BRANCH)'"
 # Путь до бинарника golang-ci
 GOLANGCI_BIN := $(shell which golangci-lint)
+# Путь до бинарника go-arch-lint
+GOARCH_BIN := $(shell which go-arch-lint)
 # Путь до бинарника go
 GO_BIN ?= go
 
@@ -74,3 +76,21 @@ deploy: build
 	@echo "=================================================="
 	./scripts/deploy/ssh_deploy.sh "$(SERVICE_BIN)" "${SSH_HOST_LIST}"
 	@echo "deploy successfully"
+
+# Устанавливает go-arch-lint если ее нет
+.PHONY: install-goarch
+install-goarch:
+ifeq ($(wildcard $(GOARCH_BIN)),)
+	@echo "downloading goarch latest.."
+	go install github.com/fe3dback/go-arch-lint@latest
+endif
+
+# Cтроит в docs/arch.svg архитектуру сервиса
+.PHONY: arch-graph
+arch-graph: install-goarch
+	$(GOARCH_BIN) graph --out docs/arch.svg
+
+# Линтовка структуры кода
+.PHONY: arch-lint
+arch-lint: install-goarch
+	$(GOARCH_BIN) check

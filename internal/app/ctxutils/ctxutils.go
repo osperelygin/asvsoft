@@ -3,8 +3,6 @@ package ctxutils
 
 import (
 	"asvsoft/internal/app/ds"
-	sensehat "asvsoft/internal/app/sensors/sense-hat"
-	serialport "asvsoft/internal/pkg/serial-port"
 	"context"
 )
 
@@ -18,9 +16,6 @@ const storageKey key = iota
 
 type Storage struct {
 	AppInfo *ds.AppInfo
-	SrcCfg  *serialport.Config
-	DstCfg  *serialport.Config
-	ImuCfg  *sensehat.ImuConfig
 }
 
 func InitStorage(parent context.Context) context.Context {
