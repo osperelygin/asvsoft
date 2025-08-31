@@ -7,7 +7,15 @@ import (
 	"io"
 )
 
-const pointNums = 12
+const (
+	pointNums            = 12
+	lidarPaylodSizeModeA = 2 + 2 + pointNums*3 + 2 + 2
+)
+
+type Point struct {
+	Distance  uint16
+	Intensity uint8
+}
 
 type LidarData struct {
 	// Speed скорость вращения лидара в град/с
@@ -22,44 +30,32 @@ type LidarData struct {
 	Timestamp uint16
 }
 
-func (d LidarData) String() string {
+func (ld LidarData) String() string {
 	type _LidarData LidarData
-	return fmt.Sprintf("%+v", _LidarData(d))
+	return fmt.Sprintf("%+v", _LidarData(ld))
 }
 
-type Point struct {
-	Distance  uint16
-	Intensity uint8
-}
-
-const (
-	lidarPaylodSizeModeA = 2 + 2 + pointNums*3 + 2 + 2
-)
-
-func packLidarData(in *LidarData, msgID MessageID) ([]byte, error) {
-	var (
-		buf *bytes.Buffer
-		err error
-	)
+func (ld *LidarData) Pack(msgID MessageID) ([]byte, error) {
+	var buf *bytes.Buffer
 
 	switch msgID {
 	case WritingModeA:
 		buf = bytes.NewBuffer(make([]byte, 0, lidarPaylodSizeModeA))
 		enc := encoder.NewEncoder(buf)
 
-		err = enc.Encode(in.Speed, in.StartAngle)
+		err := enc.Encode(ld.Speed, ld.StartAngle)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, point := range in.Points {
+		for _, point := range ld.Points {
 			err = enc.Encode(point.Distance, point.Intensity)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		err = enc.Encode(in.EndAngle, in.Timestamp)
+		err = enc.Encode(ld.EndAngle, ld.Timestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -67,35 +63,33 @@ func packLidarData(in *LidarData, msgID MessageID) ([]byte, error) {
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}
 
-	return buf.Bytes(), err
+	return buf.Bytes(), nil
 }
 
-func unpackLidarData(in []byte, msgID MessageID) (out *LidarData, err error) {
-	out = new(LidarData)
-
+func (ld *LidarData) Unpack(b []byte, msgID MessageID) error {
 	switch msgID {
 	case WritingModeA:
-		dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
+		dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(b)))
 
-		err = dec.Decode(&out.Speed, &out.StartAngle)
+		err := dec.Decode(&ld.Speed, &ld.StartAngle)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		for i := range out.Points {
-			err = dec.Decode(&out.Points[i].Distance, &out.Points[i].Intensity)
+		for i := range ld.Points {
+			err = dec.Decode(&ld.Points[i].Distance, &ld.Points[i].Intensity)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 
-		err = dec.Decode(&out.EndAngle, &out.Timestamp)
+		err = dec.Decode(&ld.EndAngle, &ld.Timestamp)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	default:
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}
 
-	return out, err
+	return nil
 }

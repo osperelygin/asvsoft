@@ -80,7 +80,7 @@ func (n *NeoM8t) configurate(msgIDList ...byte) error {
 	return nil
 }
 
-func (n *NeoM8t) Measure(_ context.Context) (any, error) {
+func (n *NeoM8t) Measure(_ context.Context) (proto.Packer, error) {
 	return n.measure()
 }
 

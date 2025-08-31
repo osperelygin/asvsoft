@@ -18,7 +18,7 @@ func New() *Measurer {
 }
 
 // Measure sleep 500 ms and returns measurement with random uint32
-func (dm *Measurer) Measure(_ context.Context) (any, error) {
+func (dm *Measurer) Measure(_ context.Context) (proto.Packer, error) {
 	time.Sleep(500 * time.Millisecond)
 	return &proto.CheckData{Value: rand.Uint32()}, nil // nolint: gosec
 }

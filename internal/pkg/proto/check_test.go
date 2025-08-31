@@ -11,12 +11,12 @@ func TestCheckDataSuccess(t *testing.T) {
 	data := &CheckData{Value: rand.Uint32()}
 
 	t.Run("успешная упакова и распаковка данных", func(t *testing.T) {
-		var sentMsg Message
+		sentMsg := NewMessage(CheckModuleID, WritingModeA, data)
 
-		msgBytes, err := sentMsg.Marshal(data, CheckModuleID, WritingModeA)
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)

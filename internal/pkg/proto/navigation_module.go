@@ -50,12 +50,7 @@ func (d GNSSData) String() string {
 	return fmt.Sprintf("%+v", _GNSSData(d))
 }
 
-type NavigationModuleData struct {
-	IMUData
-	GNSSData
-}
-
-func packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
+func (d *IMUData) Pack(msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
 		err error
@@ -65,24 +60,24 @@ func packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
 	case WritingModeA:
 		buf = bytes.NewBuffer(make([]byte, 0, imuDataPayloadSizeModeA))
 		err = encoder.NewEncoder(buf).Encode(
-			in.AccFactor,
-			in.Ax, in.Ay, in.Az,
-			in.GyrFactor,
-			in.Gx, in.Gy, in.Gz,
+			d.AccFactor,
+			d.Ax, d.Ay, d.Az,
+			d.GyrFactor,
+			d.Gx, d.Gy, d.Gz,
 		)
 	case WritingModeB:
 		buf = bytes.NewBuffer(make([]byte, 0, imuDataPayloadSizeModeB))
 		err = encoder.NewEncoder(buf).Encode(
-			in.AccFactor,
-			in.Ax, in.Ay, in.Az,
-			in.GyrFactor,
-			in.Gx, in.Gy, in.Gz,
-			in.Mx, in.My, in.Mz,
+			d.AccFactor,
+			d.Ax, d.Ay, d.Az,
+			d.GyrFactor,
+			d.Gx, d.Gy, d.Gz,
+			d.Mx, d.My, d.Mz,
 		)
 	case WritingModeC:
 		buf = bytes.NewBuffer(make([]byte, 0, imuDataPayloadSizeModeC))
 		err = encoder.NewEncoder(buf).Encode(
-			in.Mx, in.My, in.Mz,
+			d.Mx, d.My, d.Mz,
 		)
 	default:
 		panic(fmt.Sprintf("packIMUData is not implemented for this message ID: %x", msgID))
@@ -91,40 +86,40 @@ func packIMUData(in *IMUData, msgID MessageID) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func unpackIMUData(in []byte, msgID MessageID) (out *IMUData, err error) {
-	out = new(IMUData)
+func (d *IMUData) Unpack(in []byte, msgID MessageID) error {
+	var err error
 
 	switch msgID {
 	case WritingModeA:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 		err = enc.Decode(
-			&out.AccFactor,
-			&out.Ax, &out.Ay, &out.Az,
-			&out.GyrFactor,
-			&out.Gx, &out.Gy, &out.Gz,
+			&d.AccFactor,
+			&d.Ax, &d.Ay, &d.Az,
+			&d.GyrFactor,
+			&d.Gx, &d.Gy, &d.Gz,
 		)
 	case WritingModeB:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 		err = enc.Decode(
-			&out.AccFactor,
-			&out.Ax, &out.Ay, &out.Az,
-			&out.GyrFactor,
-			&out.Gx, &out.Gy, &out.Gz,
-			&out.Mx, &out.My, &out.Mz,
+			&d.AccFactor,
+			&d.Ax, &d.Ay, &d.Az,
+			&d.GyrFactor,
+			&d.Gx, &d.Gy, &d.Gz,
+			&d.Mx, &d.My, &d.Mz,
 		)
 	case WritingModeC:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 		err = enc.Decode(
-			&out.Mx, &out.My, &out.Mz,
+			&d.Mx, &d.My, &d.Mz,
 		)
 	default:
 		panic(fmt.Sprintf("unpackIMUData is not implemented for this message ID: %x", msgID))
 	}
 
-	return out, err
+	return err
 }
 
-func packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
+func (d *GNSSData) Pack(msgID MessageID) ([]byte, error) {
 	var (
 		buf *bytes.Buffer
 		err error
@@ -134,32 +129,32 @@ func packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
 	case WritingModeA:
 		buf = bytes.NewBuffer(make([]byte, 0, gnssDataPayloadSizeModeA))
 		err = encoder.NewEncoder(buf).Encode(
-			in.ITowNAVPOSLLH,
-			in.Lon, in.Lat,
-			in.Height, in.HMSL,
-			in.HAcc, in.VAcc,
-			in.ITowNAVVELNED,
-			in.VelN, in.VelE, in.VelD,
-			in.Speed, in.GSppeed,
-			in.Heading,
-			in.SAcc, in.CAcc,
+			d.ITowNAVPOSLLH,
+			d.Lon, d.Lat,
+			d.Height, d.HMSL,
+			d.HAcc, d.VAcc,
+			d.ITowNAVVELNED,
+			d.VelN, d.VelE, d.VelD,
+			d.Speed, d.GSppeed,
+			d.Heading,
+			d.SAcc, d.CAcc,
 		)
 	case WritingModeB:
 		buf = bytes.NewBuffer(make([]byte, 0, gnssDataPayloadSizeModeB))
 		err = encoder.NewEncoder(buf).Encode(
-			in.ITowNAVPOSLLH,
-			in.Lon, in.Lat,
-			in.Height, in.HMSL,
-			in.HAcc, in.VAcc,
+			d.ITowNAVPOSLLH,
+			d.Lon, d.Lat,
+			d.Height, d.HMSL,
+			d.HAcc, d.VAcc,
 		)
 	case WritingModeC:
 		buf = bytes.NewBuffer(make([]byte, 0, gnssDataPayloadSizeModeC))
 		err = encoder.NewEncoder(buf).Encode(
-			in.ITowNAVVELNED,
-			in.VelN, in.VelE, in.VelD,
-			in.Speed, in.GSppeed,
-			in.Heading,
-			in.SAcc, in.CAcc,
+			d.ITowNAVVELNED,
+			d.VelN, d.VelE, d.VelD,
+			d.Speed, d.GSppeed,
+			d.Heading,
+			d.SAcc, d.CAcc,
 		)
 	default:
 		panic(fmt.Sprintf("packGNSSData is not implemented for this message ID: %x", msgID))
@@ -168,43 +163,41 @@ func packGNSSData(in *GNSSData, msgID MessageID) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func unpackGNSSData(in []byte, msgID MessageID) (out *GNSSData, err error) {
-	out = new(GNSSData)
-
+func (d *GNSSData) Unpack(in []byte, msgID MessageID) (err error) {
 	switch msgID {
 	case WritingModeA:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 		err = enc.Decode(
-			&out.ITowNAVPOSLLH,
-			&out.Lon, &out.Lat,
-			&out.Height, &out.HMSL,
-			&out.HAcc, &out.VAcc,
-			&out.ITowNAVVELNED,
-			&out.VelN, &out.VelE, &out.VelD,
-			&out.Speed, &out.GSppeed,
-			&out.Heading,
-			&out.SAcc, &out.CAcc,
+			&d.ITowNAVPOSLLH,
+			&d.Lon, &d.Lat,
+			&d.Height, &d.HMSL,
+			&d.HAcc, &d.VAcc,
+			&d.ITowNAVVELNED,
+			&d.VelN, &d.VelE, &d.VelD,
+			&d.Speed, &d.GSppeed,
+			&d.Heading,
+			&d.SAcc, &d.CAcc,
 		)
 	case WritingModeB:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 		err = enc.Decode(
-			&out.ITowNAVPOSLLH,
-			&out.Lon, &out.Lat,
-			&out.Height, &out.HMSL,
-			&out.HAcc, &out.VAcc,
+			&d.ITowNAVPOSLLH,
+			&d.Lon, &d.Lat,
+			&d.Height, &d.HMSL,
+			&d.HAcc, &d.VAcc,
 		)
 	case WritingModeC:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 		err = enc.Decode(
-			&out.ITowNAVVELNED,
-			&out.VelN, &out.VelE, &out.VelD,
-			&out.Speed, &out.GSppeed,
-			&out.Heading,
-			&out.SAcc, &out.CAcc,
+			&d.ITowNAVVELNED,
+			&d.VelN, &d.VelE, &d.VelD,
+			&d.Speed, &d.GSppeed,
+			&d.Heading,
+			&d.SAcc, &d.CAcc,
 		)
 	default:
 		panic(fmt.Sprintf("unpackGNSSData is not implemented for this message ID: %x", msgID))
 	}
 
-	return out, err
+	return err
 }

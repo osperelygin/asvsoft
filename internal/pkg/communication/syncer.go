@@ -78,9 +78,7 @@ func (s *Syncer) SyncSystemTime() error {
 		return nil
 	}
 
-	var req proto.Message
-
-	b, err := req.Marshal(nil, s.moduleID, proto.SyncRequest)
+	b, err := proto.NewMessage(s.moduleID, proto.SyncRequest, nil).Marshal()
 	if err != nil {
 		return fmt.Errorf("cannot marshal msg: %w", err)
 	}
@@ -109,7 +107,12 @@ func (s *Syncer) SyncSystemTime() error {
 			return fmt.Errorf("unexpected msgID: %#X", resp.MsgID)
 		}
 
-		startStamp = resp.Payload.(uint32)
+		d, ok := resp.Payload.(*proto.SyncData)
+		if !ok {
+			return fmt.Errorf("unexpected payload type")
+		}
+
+		startStamp = uint32(*d)
 
 		return nil
 	}, logger.Wrap(log.StandardLogger(), "[syncer]"), s.retries, s.sleep)
@@ -122,14 +125,16 @@ func (s *Syncer) SyncSystemTime() error {
 	return nil
 }
 
-func (s *Syncer) ProcessSyncRequest(req proto.Message) (proto.Message, error) {
-	var resp proto.Message
+func (s *Syncer) ProcessSyncRequest(req proto.Message) (*proto.Message, error) {
+	startStamp := proto.SyncData(proto.GetStartStamp())
+
+	resp := proto.NewMessage(s.moduleID, proto.SyncResponse, &startStamp)
 
 	if req.MsgID != proto.SyncRequest {
 		return resp, fmt.Errorf("unexpected msgID: %#X", req.MsgID)
 	}
 
-	b, err := resp.Marshal(proto.GetStartStamp(), s.moduleID, proto.SyncResponse)
+	b, err := resp.Marshal()
 	if err != nil {
 		return resp, fmt.Errorf("cannot marshal resp: %w", err)
 	}

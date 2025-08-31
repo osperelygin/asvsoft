@@ -98,7 +98,7 @@ func NewIMU(config *ImuConfig) (*IMU, error) {
 	return imu, nil
 }
 
-func (imu *IMU) Measure(_ context.Context) (any, error) {
+func (imu *IMU) Measure(_ context.Context) (proto.Packer, error) {
 	time.Sleep(imu.config.Period)
 	return imu.measure()
 }

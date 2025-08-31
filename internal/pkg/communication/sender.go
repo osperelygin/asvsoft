@@ -69,7 +69,7 @@ func (s *Sender) Start(ctx context.Context) error {
 	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	measureChan := make(chan any)
+	measureChan := make(chan proto.Packer)
 
 	go func() {
 		for {
@@ -123,7 +123,7 @@ var (
 )
 
 // Send упаковывает измерения согласно унифицированному протоколу и отправляет пакет в s.rw.
-func (s *Sender) Send(data any) error {
+func (s *Sender) Send(data proto.Packer) error {
 	if chunkedRequestModules[s.addr] {
 		return s.chunkedSend(data)
 	}
@@ -131,10 +131,10 @@ func (s *Sender) Send(data any) error {
 	return s.send(data)
 }
 
-func (s *Sender) send(data any) error {
-	var msg proto.Message
+func (s *Sender) send(data proto.Packer) error {
+	msg := proto.NewMessage(s.addr, s.mode, data)
 
-	b, err := msg.Marshal(data, s.addr, s.mode)
+	b, err := msg.Marshal()
 	if err != nil {
 		return fmt.Errorf("cannot marshal msg: %w", err)
 	}

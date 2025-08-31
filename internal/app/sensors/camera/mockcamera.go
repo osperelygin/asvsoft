@@ -20,7 +20,7 @@ func NewMockCamera(data [][3]int16) (*MockCamera, error) {
 	return &MockCamera{data: data}, nil
 }
 
-func (c *MockCamera) Measure(_ context.Context) (any, error) {
+func (c *MockCamera) Measure(_ context.Context) (proto.Packer, error) {
 	return c.measure()
 }
 

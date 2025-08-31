@@ -28,12 +28,12 @@ func TestPackLidarDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упакова и распаковка данных", func(t *testing.T) {
-		var sentMsg Message
+		sentMsg := NewMessage(LidarModuleID, WritingModeA, data)
 
-		msgBytes, err := sentMsg.Marshal(data, LidarModuleID, WritingModeA)
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)

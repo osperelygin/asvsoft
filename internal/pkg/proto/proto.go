@@ -206,8 +206,16 @@ type Message struct {
 	MsgID       MessageID
 	SystemTime  uint32
 	PayloadSize uint8
-	Payload     any
+	Payload     Packer
 	CheckSum    uint8
+}
+
+func NewMessage(moduleID ModuleID, msgID MessageID, payload Packer) *Message {
+	return &Message{
+		ModuleID: moduleID,
+		MsgID:    msgID,
+		Payload:  payload,
+	}
 }
 
 func (m Message) String() string {
@@ -217,31 +225,22 @@ func (m Message) String() string {
 	)
 }
 
+type Packer interface {
+	Pack(msgID MessageID) ([]byte, error)
+	Unpack(b []byte, msgID MessageID) error
+}
+
 // Marshal ...
-func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte, error) {
+func (m *Message) Marshal() ([]byte, error) {
 	var (
 		err        error
 		rawPayload []byte
 	)
 
-	m.ModuleID = moduleID
-	m.MsgID = msgID
-	m.Payload = data
-
-	switch msgID {
+	switch m.MsgID {
 	case SyncRequest, ResponseOK, ResponseFail:
-		// just chill
-	case SyncResponse:
-		enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, 4)))
-
-		err = enc.Encode(data.(uint32))
-		if err != nil {
-			return nil, err
-		}
-
-		rawPayload = enc.Bytes()
 	default:
-		rawPayload, err = m.pack(data)
+		rawPayload, err = m.Payload.Pack(m.MsgID)
 	}
 
 	if err != nil {
@@ -253,7 +252,7 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 
 	enc := encoder.NewEncoder(bytes.NewBuffer(make([]byte, 0, serviceBytesSize+int(m.PayloadSize))))
 
-	err = enc.Encode(header, dummySystemByte, uint8(moduleID), uint8(msgID), m.SystemTime, m.PayloadSize, rawPayload)
+	err = enc.Encode(header, dummySystemByte, uint8(m.ModuleID), uint8(m.MsgID), m.SystemTime, m.PayloadSize, rawPayload)
 	if err != nil {
 		return nil, err
 	}
@@ -266,32 +265,6 @@ func (m *Message) Marshal(data any, moduleID ModuleID, msgID MessageID) ([]byte,
 	}
 
 	return enc.Bytes(), nil
-}
-
-func (m *Message) pack(data any) ([]byte, error) {
-	var (
-		rawPayload []byte
-		err        error
-	)
-
-	switch m.ModuleID {
-	case DepthMeterModuleID:
-		rawPayload, err = packDepthMeterData(data.(*DepthMeterData), m.MsgID)
-	case LidarModuleID:
-		rawPayload, err = packLidarData(data.(*LidarData), m.MsgID)
-	case IMUModuleID:
-		rawPayload, err = packIMUData(data.(*IMUData), m.MsgID)
-	case GNSSModuleID:
-		rawPayload, err = packGNSSData(data.(*GNSSData), m.MsgID)
-	case CameraModuleID:
-		rawPayload, err = packCameraData(data.(*CameraData), m.MsgID)
-	case CheckModuleID:
-		rawPayload, err = packCheckData(data.(*CheckData), m.MsgID)
-	default:
-		panic(fmt.Sprintf("Pack is not implemented for this addr (%x)", m.ModuleID))
-	}
-
-	return rawPayload, err
 }
 
 // Unmarshal ...
@@ -341,10 +314,6 @@ func (m *Message) Unmarshal(data []byte) error {
 
 	switch m.MsgID {
 	case SyncRequest, ResponseOK, ResponseFail:
-	case SyncResponse:
-		d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(rawPayload)))
-		defer d.Close()
-		m.Payload, err = d.U32()
 	default:
 		err = m.unpack(rawPayload)
 	}
@@ -353,26 +322,24 @@ func (m *Message) Unmarshal(data []byte) error {
 }
 
 func (m *Message) unpack(rawPayload []byte) error {
-	var err error
-
 	switch m.ModuleID {
 	case DepthMeterModuleID:
-		m.Payload, err = unpackDepthMeterData(rawPayload, m.MsgID)
+		m.Payload = &DepthMeterData{}
 	case LidarModuleID:
-		m.Payload, err = unpackLidarData(rawPayload, m.MsgID)
+		m.Payload = &LidarData{}
 	case IMUModuleID:
-		m.Payload, err = unpackIMUData(rawPayload, m.MsgID)
+		m.Payload = &IMUData{}
 	case GNSSModuleID:
-		m.Payload, err = unpackGNSSData(rawPayload, m.MsgID)
+		m.Payload = &GNSSData{}
 	case CameraModuleID:
-		m.Payload, err = unpackCameraData(rawPayload, m.MsgID)
+		m.Payload = &CameraData{}
 	case CheckModuleID:
-		m.Payload, err = unpackCheckData(rawPayload, m.MsgID)
+		m.Payload = &CheckData{}
 	default:
 		panic(fmt.Sprintf("Unpack is not implemented for this addr (%x)", m.ModuleID))
 	}
 
-	return err
+	return m.Payload.Unpack(rawPayload, m.MsgID)
 }
 
 var startStamp = time.Now().UnixMilli()

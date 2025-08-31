@@ -60,7 +60,7 @@ func (c *Camera) Close() error {
 	return nil
 }
 
-func (c *Camera) Measure(ctx context.Context) (any, error) {
+func (c *Camera) Measure(ctx context.Context) (proto.Packer, error) {
 	return c.measure()
 }
 

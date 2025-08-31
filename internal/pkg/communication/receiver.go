@@ -124,9 +124,7 @@ func (r *Receiver) sendMsg(msgID proto.MessageID) error {
 		return nil
 	}
 
-	var msg proto.Message
-
-	rawResp, err := msg.Marshal(nil, r.moduleID, msgID)
+	rawResp, err := proto.NewMessage(r.moduleID, msgID, nil).Marshal()
 	if err != nil {
 		err = fmt.Errorf("failed to marshal response: %w", err)
 		r.log.Errorf("%v", err)

@@ -27,24 +27,21 @@ const (
 	cameraDataSizeModeA = 6
 )
 
-func packCameraData(in *CameraData, msgID MessageID) ([]byte, error) {
-	var (
-		buf *bytes.Buffer
-		err error
-	)
+func (cd *CameraData) Pack(msgID MessageID) ([]byte, error) {
+	var buf *bytes.Buffer
 
 	switch msgID {
 	case WritingModeA:
 		buf = bytes.NewBuffer(make([]byte, 0, cameraDataSizeModeA))
 
-		err = encoder.NewEncoder(buf).Encode(in.Yaw, in.Pitch, in.Roll)
+		err := encoder.NewEncoder(buf).Encode(cd.Yaw, cd.Pitch, cd.Roll)
 		if err != nil {
 			return nil, err
 		}
 	case WritingModeB:
-		buf = bytes.NewBuffer(make([]byte, 0, len(in.RawImagePart)+2))
+		buf = bytes.NewBuffer(make([]byte, 0, len(cd.RawImagePart)+2))
 
-		err = encoder.NewEncoder(buf).Encode(in.CurrentChunck, in.TotalChunckes, in.RawImagePart)
+		err := encoder.NewEncoder(buf).Encode(cd.CurrentChunck, cd.TotalChunckes, cd.RawImagePart)
 		if err != nil {
 			return nil, err
 		}
@@ -52,32 +49,30 @@ func packCameraData(in *CameraData, msgID MessageID) ([]byte, error) {
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}
 
-	return buf.Bytes(), err
+	return buf.Bytes(), nil
 }
 
-func unpackCameraData(in []byte, msgID MessageID) (out *CameraData, err error) {
-	out = new(CameraData)
-
+func (cd *CameraData) Unpack(in []byte, msgID MessageID) error {
 	switch msgID {
 	case WritingModeA:
 		dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 
-		err = dec.Decode(&out.Yaw, &out.Pitch, &out.Roll)
+		err := dec.Decode(&cd.Yaw, &cd.Pitch, &cd.Roll)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	case WritingModeB:
 		dec := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
 
-		out.RawImagePart = make([]byte, len(in)-2)
+		cd.RawImagePart = make([]byte, len(in)-2)
 
-		err = dec.Decode(&out.CurrentChunck, &out.TotalChunckes, &out.RawImagePart)
+		err := dec.Decode(&cd.CurrentChunck, &cd.TotalChunckes, &cd.RawImagePart)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	default:
 		panic(fmt.Sprintf("packLidarData is not implemented for this message ID: %x", msgID))
 	}
 
-	return out, err
+	return nil
 }

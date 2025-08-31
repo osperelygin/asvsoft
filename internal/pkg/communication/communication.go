@@ -1,6 +1,7 @@
 package communication
 
 import (
+	"asvsoft/internal/pkg/proto"
 	"context"
 	"io"
 )
@@ -12,5 +13,5 @@ const (
 
 type MeasureCloser interface {
 	io.Closer
-	Measure(ctx context.Context) (any, error)
+	Measure(ctx context.Context) (proto.Packer, error)
 }

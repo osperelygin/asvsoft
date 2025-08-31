@@ -15,15 +15,15 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		var sentMsg Message
-
-		msgBytes, err := sentMsg.Marshal(&IMUData{
+		sentMsg := NewMessage(IMUModuleID, WritingModeA, &IMUData{
 			Ax: data.Ax, Ay: data.Ay, Az: data.Az,
 			Gx: data.Gx, Gy: data.Gy, Gz: data.Gz,
-		}, IMUModuleID, WritingModeA)
+		})
+
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
@@ -31,12 +31,12 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		var sentMsg Message
+		sentMsg := NewMessage(IMUModuleID, WritingModeB, data)
 
-		msgBytes, err := sentMsg.Marshal(data, IMUModuleID, WritingModeB)
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
@@ -44,14 +44,14 @@ func TestPackIMUDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		var sentMsg Message
-
-		msgBytes, err := sentMsg.Marshal(&IMUData{
+		sentMsg := NewMessage(IMUModuleID, WritingModeC, &IMUData{
 			Mx: data.Mx, My: data.My, Mz: data.Mz,
-		}, IMUModuleID, WritingModeC)
+		})
+
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
@@ -80,12 +80,12 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	}
 
 	t.Run("успешная упаковка и распаковка данных сообщения A", func(t *testing.T) {
-		var sentMsg Message
+		sentMsg := NewMessage(GNSSModuleID, WritingModeA, data)
 
-		msgBytes, err := sentMsg.Marshal(data, GNSSModuleID, WritingModeA)
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
@@ -93,9 +93,7 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения B", func(t *testing.T) {
-		var sentMsg Message
-
-		msgBytes, err := sentMsg.Marshal(&GNSSData{
+		sentMsg := NewMessage(GNSSModuleID, WritingModeB, &GNSSData{
 			ITowNAVPOSLLH: uint32(time.Now().Unix()) - 3,
 			Lon:           data.Lon,
 			Lat:           data.Lat,
@@ -103,10 +101,12 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 			HMSL:          data.HMSL,
 			HAcc:          data.HAcc,
 			VAcc:          data.VAcc,
-		}, GNSSModuleID, WritingModeB)
+		})
+
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)
@@ -114,9 +114,7 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 	})
 
 	t.Run("успешная упаковка и распаковка данных сообщения C", func(t *testing.T) {
-		var sentMsg Message
-
-		msgBytes, err := sentMsg.Marshal(&GNSSData{
+		sentMsg := NewMessage(GNSSModuleID, WritingModeC, &GNSSData{
 			VelN:    data.VelN,
 			VelE:    data.VelE,
 			VelD:    data.VelD,
@@ -125,10 +123,12 @@ func TestPackGNSSSDataSuccess(t *testing.T) {
 			Heading: data.Heading,
 			SAcc:    data.SAcc,
 			CAcc:    data.CAcc,
-		}, GNSSModuleID, WritingModeC)
+		})
+
+		msgBytes, err := sentMsg.Marshal()
 		require.NoError(t, err)
 
-		var receivedMsg Message
+		receivedMsg := new(Message)
 
 		err = receivedMsg.Unmarshal(msgBytes)
 		require.NoError(t, err)

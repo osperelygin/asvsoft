@@ -34,7 +34,7 @@ func New(r io.ReadCloser) *DepthMeter {
 	}
 }
 
-func (dm *DepthMeter) Measure(_ context.Context) (any, error) {
+func (dm *DepthMeter) Measure(_ context.Context) (proto.Packer, error) {
 	return dm.measure()
 }
 

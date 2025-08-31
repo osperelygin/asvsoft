@@ -34,7 +34,7 @@ func New(r io.ReadCloser) *Lidar {
 	}
 }
 
-func (l *Lidar) Measure(_ context.Context) (any, error) {
+func (l *Lidar) Measure(_ context.Context) (proto.Packer, error) {
 	return l.measure()
 }
 

@@ -32,33 +32,36 @@ const (
 	depthMeterPaylodSizeModeA = 12
 )
 
-func packDepthMeterData(in *DepthMeterData, msgID MessageID) ([]byte, error) {
-	var (
-		buf *bytes.Buffer
-		err error
-	)
+func (dmd *DepthMeterData) Pack(msgID MessageID) ([]byte, error) {
+	var buf *bytes.Buffer
 
 	switch msgID {
 	case WritingModeA:
 		buf = bytes.NewBuffer(make([]byte, 0, depthMeterPaylodSizeModeA))
-		err = encoder.NewEncoder(buf).Encode(in.ID, in.SystemTime, in.Distance, in.Status, in.Strength, in.Precision)
+
+		err := encoder.NewEncoder(buf).Encode(dmd.ID, dmd.SystemTime, dmd.Distance, dmd.Status, dmd.Strength, dmd.Precision)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		panic(fmt.Sprintf("packDepthMeterData is not implemented for this message ID: %x", msgID))
 	}
 
-	return buf.Bytes(), err
+	return buf.Bytes(), nil
 }
 
-func unpackDepthMeterData(in []byte, msgID MessageID) (out *DepthMeterData, err error) {
-	out = new(DepthMeterData)
-
+func (dmd *DepthMeterData) Unpack(b []byte, msgID MessageID) error {
 	switch msgID {
 	case WritingModeA:
-		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
-		err = enc.Decode(&out.ID, &out.SystemTime, &out.Distance, &out.Status, &out.Strength, &out.Precision)
+		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(b)))
+
+		err := enc.Decode(&dmd.ID, &dmd.SystemTime, &dmd.Distance, &dmd.Status, &dmd.Strength, &dmd.Precision)
+		if err != nil {
+			return err
+		}
 	default:
 		panic(fmt.Sprintf("packDepthMeterData is not implemented for this message ID: %x", msgID))
 	}
 
-	return out, err
+	return nil
 }
