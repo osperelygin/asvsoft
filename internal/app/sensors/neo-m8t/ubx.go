@@ -2,6 +2,7 @@
 package neom8t
 
 import (
+	"asvsoft/internal/app/config"
 	"asvsoft/internal/pkg/proto"
 	"context"
 	"fmt"
@@ -13,24 +14,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	FullMode       = "ALL"
-	NavPosslshMode = "NAV-POSLLH"
-	NavVelnedMode  = "NAV-VELNED"
-)
-
-type Config struct {
-	Rate int // Период получения навигационного решения в секундах
-	Mode string
-}
-
 type NeoM8t struct {
-	cfg *Config
+	cfg *config.NeoM8tConfig
 	d   *ublox.Decoder
 	r   io.ReadWriteCloser
 }
 
-func New(cfg *Config, r io.ReadWriteCloser) (*NeoM8t, error) {
+func New(cfg *config.NeoM8tConfig, r io.ReadWriteCloser) (*NeoM8t, error) {
 	n := &NeoM8t{
 		cfg: cfg,
 		r:   r,

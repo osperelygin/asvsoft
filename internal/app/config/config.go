@@ -2,21 +2,21 @@
 package config
 
 import (
-	neom8t "asvsoft/internal/app/sensors/neo-m8t"
-	sensehat "asvsoft/internal/app/sensors/sense-hat"
+	"asvsoft/internal/pkg/communication"
 	serialport "asvsoft/internal/pkg/serial-port"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
 type ModuleConfig struct {
-	SensorSerialPort      *serialport.Config
-	ControllerSerialPort  *serialport.Config
-	RegistratorSerialPort *serialport.Config
-	NeoM8t                *neom8t.Config
-	Imu                   *sensehat.ImuConfig
+	SensorSerialPort      *SerialPortConfig
+	ControllerSerialPort  *SerialPortConfig
+	RegistratorSerialPort *SerialPortConfig
+	NeoM8t                *NeoM8tConfig
+	SenseHAT              *SenseHATConfig
 }
 
 type ControllerConfig struct {
@@ -24,8 +24,64 @@ type ControllerConfig struct {
 }
 
 type ModuleConnectionConfig struct {
-	Listener *serialport.Config `yaml:"listener" mapstructure:"listener"`
-	Enabled  bool               `yaml:"enabled" mapstructure:"enabled"`
+	Listener *SerialPortConfig `yaml:"listener" mapstructure:"listener"`
+	Enabled  bool              `yaml:"enabled" mapstructure:"enabled"`
+}
+
+type SerialPortConfig struct {
+	serialport.Config
+	// Sync флаг включения функционала гарантированной доставки сообщений. В случае конфига
+	// сервера - будут отправляться ok-сообщения, в случае конфига клиента - будет ожидание
+	// ok-сообщения от сервера.
+	Sync                 bool `yaml:"sync" mapstructure:"sync"`
+	ChunkSize            int  `yaml:"chunk_size" mapstructure:"chunk_size"`
+	RetriesLimit         int  `yaml:"retries_limit" mapstructure:"retries_limit"`
+	TransmittingDisabled bool
+	Sleep                time.Duration
+}
+
+func (c *SerialPortConfig) SetDefaults() {
+	if c.ChunkSize == 0 {
+		c.ChunkSize = communication.DefaultChunkSize
+	}
+
+	if c.RetriesLimit == 0 {
+		c.RetriesLimit = communication.DefaultRetriesLimit
+	}
+}
+
+func (c SerialPortConfig) String() string {
+	return fmt.Sprintf(
+		"port: %q, baudrate: %d, timeout: %v, sync: %v, sleep: %v, transmitting_disabled: %v",
+		c.Port, c.BaudRate, c.Timeout, c.Sync, c.Sleep, c.TransmittingDisabled,
+	)
+}
+
+func (c SerialPortConfig) Short() serialport.Config {
+	return serialport.Config{
+		Port:     c.Port,
+		BaudRate: c.BaudRate,
+		Timeout:  c.Timeout,
+	}
+}
+
+type NeoM8tConfig struct {
+	// Rate период получения навигационного решения в секундах
+	Rate int
+}
+
+type SenseHATConfig struct {
+	Period time.Duration
+	Mode   string
+	Acc    SenseHATSensorConfig
+	Gyr    SenseHATSensorConfig
+	Mag    SenseHATSensorConfig
+}
+
+type SenseHATSensorConfig struct {
+	Order        float32
+	Range        int
+	RemoveOffset bool
 }
 
 func NewControllerConfig(cfgPath string) (*ControllerConfig, error) {

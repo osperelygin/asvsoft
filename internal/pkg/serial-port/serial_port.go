@@ -2,7 +2,6 @@
 package serialport
 
 import (
-	"asvsoft/internal/pkg/communication"
 	"asvsoft/internal/pkg/logger"
 	"errors"
 	"fmt"
@@ -18,41 +17,16 @@ var (
 type Wrapper struct {
 	serial.Port
 	logger logger.Logger
-	Cfg    *Config
+	Cfg    Config
 }
 
 type Config struct {
 	Port     string        `yaml:"port" mapstructure:"port"`
 	BaudRate int           `yaml:"baudrate" mapstructure:"baudrate"`
 	Timeout  time.Duration `yaml:"timeout" mapstructure:"timeout"`
-	// Sync флаг включения функционала гарантированной доставки сообщений. В случае конфига
-	// сервера - будут отправляться ok-сообщения, в случае конфига клиента - будет ожидание
-	// ok-сообщения от сервера.
-	Sync                 bool `yaml:"sync" mapstructure:"sync"`
-	ChunkSize            int  `yaml:"chunk_size" mapstructure:"chunk_size"`
-	RetriesLimit         int  `yaml:"retries_limit" mapstructure:"retries_limit"`
-	TransmittingDisabled bool
-	Sleep                time.Duration
 }
 
-func (c *Config) SetDefaults() {
-	if c.ChunkSize == 0 {
-		c.ChunkSize = communication.DefaultChunkSize
-	}
-
-	if c.RetriesLimit == 0 {
-		c.RetriesLimit = communication.DefaultRetriesLimit
-	}
-}
-
-func (c Config) String() string {
-	return fmt.Sprintf(
-		"port: %q, baudrate: %d, timeout: %v, sync: %v, sleep: %v, transmitting_disabled: %v",
-		c.Port, c.BaudRate, c.Timeout, c.Sync, c.Sleep, c.TransmittingDisabled,
-	)
-}
-
-func New(cfg *Config) (*Wrapper, error) {
+func New(cfg Config) (*Wrapper, error) {
 	port, err := newSerialPort(cfg)
 	if err != nil {
 		return nil, err
@@ -64,7 +38,7 @@ func New(cfg *Config) (*Wrapper, error) {
 	}, nil
 }
 
-func newSerialPort(cfg *Config) (serial.Port, error) {
+func newSerialPort(cfg Config) (serial.Port, error) {
 	port, err := serial.Open(cfg.Port, &serial.Mode{BaudRate: cfg.BaudRate})
 	if err != nil {
 		return nil, fmt.Errorf("cannot open serial port '%s': %v", cfg.Port, err)

@@ -67,7 +67,7 @@ func ControllerHandler(moduleID proto.ModuleID, ctrlCfgPath *string) func(cmd *c
 				continue
 			}
 
-			srcPort, err := serialport.New(connCfg.Listener)
+			srcPort, err := serialport.New(connCfg.Listener.Short())
 			if err != nil {
 				return fmt.Errorf("cannot open serial port %s: %w", connCfg.Listener, err)
 			}

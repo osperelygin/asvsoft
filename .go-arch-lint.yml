@@ -59,8 +59,8 @@ deps:
       - sensors
   config:
     mayDependOn:
-      - sensors
       - serial-port
+      - communication
   ctxutils:
     mayDependOn:
       - ds
@@ -72,6 +72,7 @@ deps:
       - proto
       - logger
       - serial-port
+      - config
   # common:
   #   mayDependOn:
   communication:
@@ -91,7 +92,6 @@ deps:
   serial-port:
     mayDependOn:
       - logger
-      - communication # FIXME
   utils:
     mayDependOn:
       - logger

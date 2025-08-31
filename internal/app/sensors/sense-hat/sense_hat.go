@@ -1,6 +1,7 @@
 package sensehat
 
 import (
+	"asvsoft/internal/app/config"
 	"asvsoft/internal/pkg/encoder"
 	"asvsoft/internal/pkg/proto"
 	"bytes"
@@ -26,9 +27,9 @@ type configCmd struct {
 	val byte
 }
 
-type IMU struct {
+type SenseHAT struct {
 	buf         []byte
-	config      *ImuConfig
+	config      internalConfig
 	inertialBus *i2c.I2C
 	magnBus     *i2c.I2C
 	gxOffset    int16
@@ -36,42 +37,44 @@ type IMU struct {
 	gzOffset    int16
 }
 
-func NewIMU(config *ImuConfig) (*IMU, error) {
-	err := config.validate()
+func New(cmnCfg *config.SenseHATConfig) (*SenseHAT, error) {
+	cfg := getInternalConfig(*cmnCfg)
+
+	err := cfg.validate()
 	if err != nil {
 		return nil, err
 	}
 
-	imu := &IMU{config: config}
+	s := &SenseHAT{config: cfg}
 
-	switch config.Mode {
+	switch cfg.Mode {
 	case FullMode:
-		imu.buf = make([]byte, 24)
+		s.buf = make([]byte, 24)
 	case IntertialMode:
-		imu.buf = make([]byte, 16)
+		s.buf = make([]byte, 16)
 	default:
-		return nil, fmt.Errorf("cannot create imu: unknown mode: '%s'", config.Mode)
+		return nil, fmt.Errorf("cannot create imu: unknown mode: '%s'", cfg.Mode)
 	}
 
 	defer func() {
 		if err != nil {
-			err = imu.Close()
+			err = s.Close()
 			if err != nil {
 				log.Errorf("failed to close imu: %v", err)
 			}
 		}
 	}()
 
-	imu.inertialBus, err = initInertialSensors(config)
+	s.inertialBus, err = initInertialSensors(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	if config.Gyr.RemoveOffset {
+	if cfg.Gyr.c.RemoveOffset {
 		var gx, gy, gz int
 
 		for i := 0; i < offsetCalculatingTries; i++ {
-			m, err := imu.measure()
+			m, err := s.measure()
 			if err != nil {
 				return nil, fmt.Errorf("cannot remove offset: %w", err)
 			}
@@ -83,31 +86,31 @@ func NewIMU(config *ImuConfig) (*IMU, error) {
 			time.Sleep(offsetCalculatingSleep)
 		}
 
-		imu.gxOffset = int16(gx / offsetCalculatingTries)
-		imu.gyOffset = int16(gy / offsetCalculatingTries)
-		imu.gzOffset = int16(gz / offsetCalculatingTries)
+		s.gxOffset = int16(gx / offsetCalculatingTries)
+		s.gyOffset = int16(gy / offsetCalculatingTries)
+		s.gzOffset = int16(gz / offsetCalculatingTries)
 
-		log.Infof("gyro offset: x=%d, y=%d, z=%d", imu.gxOffset, imu.gyOffset, imu.gzOffset)
+		log.Infof("gyro offset: x=%d, y=%d, z=%d", s.gxOffset, s.gyOffset, s.gzOffset)
 	}
 
-	imu.magnBus, err = initMagnSensor(config)
+	s.magnBus, err = initMagnSensor(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return imu, nil
+	return s, nil
 }
 
-func (imu *IMU) Measure(_ context.Context) (proto.Packer, error) {
-	time.Sleep(imu.config.Period)
-	return imu.measure()
+func (s *SenseHAT) Measure(_ context.Context) (proto.Packer, error) {
+	time.Sleep(s.config.Period)
+	return s.measure()
 }
 
 // ErrWrongMeasure ...
 var ErrWrongMeasure = errors.New("wrong measure")
 
-func (imu *IMU) measure() (*proto.IMUData, error) {
-	b, err := imu.RawMeasure()
+func (s *SenseHAT) measure() (*proto.IMUData, error) {
+	b, err := s.RawMeasure()
 	if err != nil {
 		return nil, err
 	}
@@ -115,18 +118,18 @@ func (imu *IMU) measure() (*proto.IMUData, error) {
 	m := &proto.IMUData{}
 	decoder := encoder.NewDecoder(io.NopCloser(bytes.NewBuffer(b)))
 
-	switch imu.config.Mode {
+	switch s.config.Mode {
 	case FullMode:
-		m.AccFactor = int16(imu.config.Acc.rangeSensitivity())
-		m.GyrFactor = int16(imu.config.Gyr.rangeSensitivity())
+		m.AccFactor = int16(s.config.Acc.rangeSensitivity())
+		m.GyrFactor = int16(s.config.Gyr.rangeSensitivity())
 		err = decoder.Decode(
 			&m.Ax, &m.Ay, &m.Az,
 			&m.Gx, &m.Gy, &m.Gz,
 			&m.Mx, &m.My, &m.Mz,
 		)
 	case IntertialMode:
-		m.AccFactor = int16(imu.config.Acc.rangeSensitivity())
-		m.GyrFactor = int16(imu.config.Gyr.rangeSensitivity())
+		m.AccFactor = int16(s.config.Acc.rangeSensitivity())
+		m.GyrFactor = int16(s.config.Gyr.rangeSensitivity())
 		err = decoder.Decode(
 			&m.Ax, &m.Ay, &m.Az,
 			&m.Gx, &m.Gy, &m.Gz,
@@ -144,50 +147,50 @@ func (imu *IMU) measure() (*proto.IMUData, error) {
 		return m, fmt.Errorf("%w: (%d, %d, %d)", ErrWrongMeasure, m.Gx, m.Gy, m.Gz)
 	}
 
-	imu.removeGyroOffset(m)
+	s.removeGyroOffset(m)
 
 	return m, nil
 }
 
-func (imu *IMU) removeGyroOffset(data *proto.IMUData) {
-	data.Gx -= imu.gxOffset
-	data.Gy -= imu.gyOffset
-	data.Gz -= imu.gzOffset
+func (s *SenseHAT) removeGyroOffset(data *proto.IMUData) {
+	data.Gx -= s.gxOffset
+	data.Gy -= s.gyOffset
+	data.Gz -= s.gzOffset
 }
 
-func (imu *IMU) RawMeasure() ([]byte, error) {
+func (s *SenseHAT) RawMeasure() ([]byte, error) {
 	var err error
 
-	switch imu.config.Mode {
+	switch s.config.Mode {
 	case FullMode:
-		b, _, err := imu.inertialBus.ReadRegBytes(QMI8658RegisterAxL, 12)
+		b, _, err := s.inertialBus.ReadRegBytes(QMI8658RegisterAxL, 12)
 		if err != nil {
 			return nil, err
 		}
 
-		copy(imu.buf[:12], b)
+		copy(s.buf[:12], b)
 
-		b, _, err = imu.readMagMeasure()
+		b, _, err = s.readMagMeasure()
 		if err != nil {
 			return nil, err
 		}
 
-		copy(imu.buf[12:], b)
+		copy(s.buf[12:], b)
 	case IntertialMode:
-		imu.buf, _, err = imu.inertialBus.ReadRegBytes(QMI8658RegisterAxL, 12)
+		s.buf, _, err = s.inertialBus.ReadRegBytes(QMI8658RegisterAxL, 12)
 	}
 
-	log.Debugf("raw read measure: %v", imu.buf)
+	log.Debugf("raw read measure: %v", s.buf)
 
-	return imu.buf, err
+	return s.buf, err
 }
 
-func (imu *IMU) readMagMeasure() ([]byte, int, error) {
+func (s *SenseHAT) readMagMeasure() ([]byte, int, error) {
 	tries := 20
 
 	for ; tries > 0; tries-- {
 		// TODO: читает нули, разобраться почему
-		b, err := imu.magnBus.ReadRegU8(AK09918_ST1)
+		b, err := s.magnBus.ReadRegU8(AK09918_ST1)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -204,19 +207,19 @@ func (imu *IMU) readMagMeasure() ([]byte, int, error) {
 		return nil, 0, fmt.Errorf("failed to read magn measure: all tries failed")
 	}
 
-	return imu.magnBus.ReadRegBytes(AK09918_HXL, 6)
+	return s.magnBus.ReadRegBytes(AK09918_HXL, 6)
 }
 
-func (imu *IMU) Close() error {
-	if imu.inertialBus != nil {
-		err := imu.inertialBus.Close()
+func (s *SenseHAT) Close() error {
+	if s.inertialBus != nil {
+		err := s.inertialBus.Close()
 		if err != nil {
 			return fmt.Errorf("cannot close inertial bus: %v", err)
 		}
 	}
 
-	if imu.magnBus != nil {
-		err := imu.magnBus.Close()
+	if s.magnBus != nil {
+		err := s.magnBus.Close()
 		if err != nil {
 			return fmt.Errorf("cannot close magn bus: %v", err)
 		}
@@ -225,8 +228,8 @@ func (imu *IMU) Close() error {
 	return nil
 }
 
-func initInertialSensors(config *ImuConfig) (*i2c.I2C, error) {
-	if !(config.Acc.Enable || config.Gyr.Enable) {
+func initInertialSensors(config internalConfig) (*i2c.I2C, error) {
+	if !(config.Acc.enable || config.Gyr.enable) {
 		return nil, nil
 	}
 
@@ -249,12 +252,12 @@ func initInertialSensors(config *ImuConfig) (*i2c.I2C, error) {
 	configCmds := make([]configCmd, 0, 5)
 	configCmds = append(configCmds, configCmd{QMI8658RegisterCtrl1, 0x60})
 
-	if config.Acc.Enable {
+	if config.Acc.enable {
 		configCmds = append(configCmds, configCmd{QMI8658RegisterCtrl2, config.Acc.order() | config.Acc.rangeValue()})
 		sensorEnabled |= QMI8658_CTRL7_ACC_ENABLE
 	}
 
-	if config.Gyr.Enable {
+	if config.Gyr.enable {
 		configCmds = append(configCmds, configCmd{QMI8658RegisterCtrl3, config.Gyr.order() | config.Gyr.rangeValue()})
 		sensorEnabled |= QMI8658_CTRL7_GYR_ENABLE
 	}
@@ -276,8 +279,8 @@ func initInertialSensors(config *ImuConfig) (*i2c.I2C, error) {
 	return bus, nil
 }
 
-func initMagnSensor(config *ImuConfig) (*i2c.I2C, error) {
-	if !config.Mag.Enable {
+func initMagnSensor(config internalConfig) (*i2c.I2C, error) {
+	if !config.Mag.enable {
 		return nil, nil
 	}
 

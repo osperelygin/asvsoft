@@ -52,7 +52,7 @@ func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communicat
 	)
 
 	if slices.Contains(requiredSrcSerialPortRunMode, mode) {
-		srcPort, err = serialport.New(cfg.SensorSerialPort)
+		srcPort, err = serialport.New(cfg.SensorSerialPort.Short())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -85,7 +85,7 @@ func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communicat
 
 		addr = proto.GNSSModuleID
 	case ImuMode:
-		m, err = sensehat.NewIMU(cfg.Imu)
+		m, err = sensehat.New(cfg.SenseHAT)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -132,7 +132,7 @@ func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communicat
 	sncr := communication.NewSyncer(addr)
 
 	if !cfg.ControllerSerialPort.TransmittingDisabled {
-		dstPort, err := serialport.New(cfg.ControllerSerialPort)
+		dstPort, err := serialport.New(cfg.ControllerSerialPort.Short())
 		if err != nil {
 			return nil, nil, err
 		}

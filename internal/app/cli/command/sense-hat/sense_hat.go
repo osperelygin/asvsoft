@@ -22,46 +22,46 @@ func Cmd() *cobra.Command {
 	}
 
 	cfg.ControllerSerialPort = common.AddSerialDestinationFlags(cmd)
-	cfg.Imu = sensehat.NewImuConfig()
+	cfg.SenseHAT = new(config.SenseHATConfig)
 
 	// TODO: реализовать различные режимы
 	cmd.Flags().DurationVar(
-		&cfg.Imu.Period, "period",
+		&cfg.SenseHAT.Period, "period",
 		10*time.Millisecond, "период чтения данных",
 	)
 
 	cmd.Flags().StringVar(
-		&cfg.Imu.Mode, "mode",
+		&cfg.SenseHAT.Mode, "mode",
 		sensehat.IntertialMode, "режим чтения данных",
 	)
 
 	cmd.Flags().Float32Var(
-		&cfg.Imu.Acc.Order, "acc-order",
+		&cfg.SenseHAT.Acc.Order, "acc-order",
 		125, "частота обновления данных на регистрах АСС в Гц",
 	)
 
 	cmd.Flags().Float32Var(
-		&cfg.Imu.Gyr.Order, "gyr-order",
+		&cfg.SenseHAT.Gyr.Order, "gyr-order",
 		125, "частота обновления данных на регистрах гироскопа в Гц",
 	)
 
 	cmd.Flags().Float32Var(
-		&cfg.Imu.Mag.Order, "mag-order",
+		&cfg.SenseHAT.Mag.Order, "mag-order",
 		20, "частота обновления данных на регистрах магнитометра в Гц",
 	)
 
 	cmd.Flags().IntVar(
-		&cfg.Imu.Acc.Range, "acc-range",
+		&cfg.SenseHAT.Acc.Range, "acc-range",
 		2, "диапазон измерений АСС в g",
 	)
 
 	cmd.Flags().IntVar(
-		&cfg.Imu.Gyr.Range, "gyr-range",
+		&cfg.SenseHAT.Gyr.Range, "gyr-range",
 		128, "диапазон измерений гироскопа в град/с",
 	)
 
 	cmd.Flags().BoolVar(
-		&cfg.Imu.Gyr.RemoveOffset, "remove-offset",
+		&cfg.SenseHAT.Gyr.RemoveOffset, "remove-offset",
 		false, "флаг удаления постоянного сдвига гироскопов",
 	)
 

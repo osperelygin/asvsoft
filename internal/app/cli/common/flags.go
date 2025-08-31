@@ -2,8 +2,8 @@
 package common
 
 import (
+	"asvsoft/internal/app/config"
 	"asvsoft/internal/pkg/communication"
-	serialport "asvsoft/internal/pkg/serial-port"
 	"strings"
 	"time"
 
@@ -19,7 +19,7 @@ const (
 // AddSerialDestinationFlags добавляем команде флаги последовательного конфигурации
 // последовательного интерфейса назначения и возвращает его конфиг. По умолчанию используется порт
 // /dev/ttySOFT0 со скоростью 4800 bit/sec
-func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
+func AddSerialDestinationFlags(cmd *cobra.Command) *config.SerialPortConfig {
 	config := addSerialSourceFlagsWithPrefix(cmd, "dst")
 
 	cmd.Flags().DurationVar(
@@ -53,13 +53,12 @@ func AddSerialDestinationFlags(cmd *cobra.Command) *serialport.Config {
 // AddSerialSourceFlags добавляем команде флаги последовательного конфигурации
 // последовательного интерфейса источника и возвращает его конфиг. По умолчанию используется порт
 // /dev/ttyAMA0 со скоростью 4800 bit/sec и таймаутом 5 секунд .
-func AddSerialSourceFlags(cmd *cobra.Command) *serialport.Config {
+func AddSerialSourceFlags(cmd *cobra.Command) *config.SerialPortConfig {
 	return addSerialSourceFlagsWithPrefix(cmd, "")
 }
 
-func addSerialSourceFlagsWithPrefix(cmd *cobra.Command, prefix string) *serialport.Config {
-	// addSerialSourceFlagsWithPrefix аналогично AddSerialSourceFlags, но с воможностью добавить флагам префикс.
-	var config serialport.Config
+func addSerialSourceFlagsWithPrefix(cmd *cobra.Command, prefix string) *config.SerialPortConfig {
+	var config config.SerialPortConfig
 
 	cmd.Flags().StringVar(
 		&config.Port, strings.Trim(prefix+"-"+"port", "-"),

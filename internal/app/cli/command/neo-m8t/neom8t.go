@@ -4,7 +4,6 @@ package neom8t
 import (
 	"asvsoft/internal/app/cli/common"
 	"asvsoft/internal/app/config"
-	neom8t "asvsoft/internal/app/sensors/neo-m8t"
 
 	"github.com/spf13/cobra"
 )
@@ -21,7 +20,7 @@ func Cmd() *cobra.Command {
 	}
 	cfg.ControllerSerialPort = common.AddSerialDestinationFlags(cmd)
 	cfg.SensorSerialPort = common.AddSerialSourceFlags(cmd)
-	cfg.NeoM8t = new(neom8t.Config)
+	cfg.NeoM8t = new(config.NeoM8tConfig)
 
 	cmd.Flags().IntVar(
 		&cfg.NeoM8t.Rate, "rate",
