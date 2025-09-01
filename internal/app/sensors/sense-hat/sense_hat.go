@@ -70,7 +70,7 @@ func New(cmnCfg *config.SenseHATConfig) (*SenseHAT, error) {
 		return nil, err
 	}
 
-	if cfg.Gyr.c.RemoveOffset {
+	if cfg.Gyr.RemoveOffset {
 		var gx, gy, gz int
 
 		for i := 0; i < offsetCalculatingTries; i++ {

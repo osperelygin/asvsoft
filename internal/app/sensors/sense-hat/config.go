@@ -19,7 +19,7 @@ type internalConfig struct {
 }
 
 type sensorConfig struct {
-	c        config.SenseHATSensorConfig
+	config.SenseHATSensorConfig
 	enable   bool
 	orderMap map[float32]byte
 	rangeMap map[int]rangeConfig
@@ -37,7 +37,7 @@ func getInternalConfig(cmnCfg config.SenseHATConfig) internalConfig {
 	cfg.Mode = cmnCfg.Mode
 
 	cfg.Acc = sensorConfig{
-		c: cmnCfg.Acc,
+		SenseHATSensorConfig: cmnCfg.Acc,
 		orderMap: map[float32]byte{
 			8000:  QMI8658AccOdr_8000Hz,
 			4000:  QMI8658AccOdr_4000Hz,
@@ -62,7 +62,7 @@ func getInternalConfig(cmnCfg config.SenseHATConfig) internalConfig {
 	}
 
 	cfg.Gyr = sensorConfig{
-		c: cmnCfg.Gyr,
+		SenseHATSensorConfig: cmnCfg.Gyr,
 		orderMap: map[float32]byte{
 			8000:  QMI8658GyrOdr8000Hz,
 			4000:  QMI8658GyrOdr4000Hz,
@@ -87,7 +87,7 @@ func getInternalConfig(cmnCfg config.SenseHATConfig) internalConfig {
 	}
 
 	cfg.Mag = sensorConfig{
-		c: cmnCfg.Mag,
+		SenseHATSensorConfig: cmnCfg.Mag,
 		orderMap: map[float32]byte{
 			10:  AK09918_CONTINUOUS_10HZ,
 			20:  AK09918_CONTINUOUS_20HZ,
@@ -142,25 +142,25 @@ func (c *sensorConfig) validate() error {
 		return nil
 	}
 
-	if _, ok := c.orderMap[c.c.Order]; !ok {
-		return fmt.Errorf("unknown sensor order: %f", c.c.Order)
+	if _, ok := c.orderMap[c.Order]; !ok {
+		return fmt.Errorf("unknown sensor order: %f", c.Order)
 	}
 
-	if _, ok := c.rangeMap[c.c.Range]; !ok {
-		return fmt.Errorf("unknown sensor range: %d", c.c.Range)
+	if _, ok := c.rangeMap[c.Range]; !ok {
+		return fmt.Errorf("unknown sensor range: %d", c.Range)
 	}
 
 	return nil
 }
 
 func (c *sensorConfig) rangeValue() byte {
-	return c.rangeMap[c.c.Range].value
+	return c.rangeMap[c.Range].value
 }
 
 func (c *sensorConfig) rangeSensitivity() int {
-	return c.rangeMap[c.c.Range].sensitivity
+	return c.rangeMap[c.Range].sensitivity
 }
 
 func (c *sensorConfig) order() byte {
-	return c.orderMap[c.c.Order]
+	return c.orderMap[c.Order]
 }

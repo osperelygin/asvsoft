@@ -21,6 +21,7 @@ func (sd *SyncData) Pack(msgID MessageID) ([]byte, error) {
 
 func (sd *SyncData) Unpack(b []byte, msgID MessageID) error {
 	d := encoder.NewDecoder(io.NopCloser(bytes.NewReader(b)))
+
 	v, err := d.U32()
 	if err != nil {
 		return err

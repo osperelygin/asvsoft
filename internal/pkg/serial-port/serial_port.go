@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	// ErrReadTimeout таймаут чтения
 	ErrReadTimeout = errors.New("read timeout")
 )
 

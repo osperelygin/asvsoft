@@ -29,7 +29,6 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - golint
     - prealloc
     - noctx
     - revive
@@ -63,6 +62,7 @@ issues:
     # выключено из-за all_caps констант модуля sense hat (c)
     - "don't use ALL_CAPS in Go names; use CamelCase" 
     - "don't use underscores in Go names; const"
+    - unused-parameter
   exclude-dirs:
     - bin
     - test

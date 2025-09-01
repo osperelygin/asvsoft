@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// TODO: найти другой способ конфигурации send mode
 type ModuleOptions struct {
 	SendMode proto.MessageID
 }
@@ -104,7 +104,7 @@ func ControllerHandler(moduleID proto.ModuleID, ctrlCfgPath *string) func(cmd *c
 		}
 
 		quitChannel := make(chan os.Signal, 2)
-		signal.Notify(quitChannel, os.Kill, os.Interrupt)
+		signal.Notify(quitChannel, syscall.SIGINT, syscall.SIGTERM)
 
 		for {
 			select {
@@ -116,7 +116,6 @@ func ControllerHandler(moduleID proto.ModuleID, ctrlCfgPath *string) func(cmd *c
 				if closeCount == len(modules) {
 					return nil
 				}
-			default:
 			}
 		}
 	}
@@ -181,7 +180,7 @@ func handleCameraRegistratorMsg(log logger.Logger, msg proto.Message) error {
 
 	fileName := fmt.Sprintf("camera_%d.jpeg", msg.SystemTime)
 
-	err := os.WriteFile(fileName, payload.RawImagePart, 0666)
+	err := os.WriteFile(fileName, payload.RawImagePart, 0666) // nolint:gosec
 	if err != nil {
 		return fmt.Errorf("failed to write image to file: %w", err)
 	}

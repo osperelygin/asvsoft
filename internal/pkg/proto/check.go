@@ -13,9 +13,9 @@ type CheckData struct {
 	Value uint32
 }
 
-func (d CheckData) String() string {
+func (cd CheckData) String() string {
 	type _CheckData CheckData
-	return fmt.Sprintf("%+v", _CheckData(d))
+	return fmt.Sprintf("%+v", _CheckData(cd))
 }
 
 func (cd *CheckData) Pack(msgID MessageID) ([]byte, error) {
@@ -24,6 +24,7 @@ func (cd *CheckData) Pack(msgID MessageID) ([]byte, error) {
 	switch msgID {
 	case WritingModeA:
 		buf = bytes.NewBuffer(make([]byte, 0, checkDataPayloadSize))
+
 		err := encoder.NewEncoder(buf).Encode(cd.Value)
 		if err != nil {
 			return nil, err
@@ -39,6 +40,7 @@ func (cd *CheckData) Unpack(in []byte, msgID MessageID) error {
 	switch msgID {
 	case WritingModeA:
 		enc := encoder.NewDecoder(io.NopCloser(bytes.NewReader(in)))
+
 		err := enc.Decode(&cd.Value)
 		if err != nil {
 			return err

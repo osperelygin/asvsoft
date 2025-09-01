@@ -23,31 +23,31 @@ func (dm DummyLogger) Warnf(format string, args ...any)  {} // nolint: revive
 func (dm DummyLogger) Debugf(format string, args ...any) {} // nolint: revive
 func (dm DummyLogger) Tracef(format string, args ...any) {} // nolint: revive
 
-type LoggerWrapper struct {
+type Wrapper struct {
 	prefix string
 	logger Logger
 }
 
-func Wrap(logger Logger, prefix string) *LoggerWrapper {
-	return &LoggerWrapper{logger: logger, prefix: prefix}
+func Wrap(logger Logger, prefix string) *Wrapper {
+	return &Wrapper{logger: logger, prefix: prefix}
 }
 
-func (l LoggerWrapper) Infof(format string, args ...any) {
+func (l Wrapper) Infof(format string, args ...any) {
 	l.logger.Infof("%s %s", l.prefix, fmt.Sprintf(format, args...))
 }
 
-func (l LoggerWrapper) Errorf(format string, args ...any) {
+func (l Wrapper) Errorf(format string, args ...any) {
 	l.logger.Errorf("%s %s", l.prefix, fmt.Sprintf(format, args...))
 }
 
-func (l LoggerWrapper) Warnf(format string, args ...any) {
+func (l Wrapper) Warnf(format string, args ...any) {
 	l.logger.Warnf("%s %s", l.prefix, fmt.Sprintf(format, args...))
 }
 
-func (l LoggerWrapper) Debugf(format string, args ...any) {
+func (l Wrapper) Debugf(format string, args ...any) {
 	l.logger.Debugf("%s %s", l.prefix, fmt.Sprintf(format, args...))
 }
 
-func (l LoggerWrapper) Tracef(format string, args ...any) {
+func (l Wrapper) Tracef(format string, args ...any) {
 	l.logger.Tracef("%s %s", l.prefix, fmt.Sprintf(format, args...))
 }

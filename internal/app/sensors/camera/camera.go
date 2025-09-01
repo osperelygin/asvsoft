@@ -34,7 +34,7 @@ func New() (*Camera, error) {
 
 	listener, err := net.Listen("unix", defaultSocketPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create listenter %w:", err)
+		return nil, fmt.Errorf("failed to create listenter %w", err)
 	}
 
 	return &Camera{listener: listener, log: logger.DummyLogger{}}, nil

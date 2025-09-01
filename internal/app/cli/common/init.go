@@ -123,6 +123,7 @@ func Init(ctx context.Context, mode RunMode, opts ...ModuleOptions) (*communicat
 		panic(fmt.Sprintf("unknown run mode: %q", addr))
 	}
 
+	// TODO: найти другой способ конфигурации send mode
 	sendMode := proto.WritingModeA
 	if len(opts) > 0 && opts[0].SendMode != 0 {
 		sendMode = opts[0].SendMode
